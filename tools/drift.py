@@ -8,11 +8,17 @@
   not_implemented— привязка есть, но status in {stub, planned, unconfirmed, deprecated};
   stale          — привязка указывает на файл/символ/маршрут/узел, которых нет в репозитории (--repo);
   unconfirmed_constraint — к процессу применимо ограничение со status=unconfirmed: critical → WARN, в --strict ERROR (блок); high → INFO, в --strict WARN; medium → INFO (ADR-017).
-Отдельно: orphan — привязка к неописанной возможности; unused — возможность без шагов.
+Отдельно: orphan — привязка к неописанной возможности; unused — возможность без шагов;
+  unmodeled — обратный дрейф (--repo): маршрут, узел графа или таблица есть в коде, но не описаны в слое 5.
+  Всегда WARN, в том числе в --strict: не всё в коде обязано быть в модели (ADR-020).
+
+С --repo привязки к Python-файлам сверяются по реестру кода (tools/code_inventory.py, разбор ast):
+символ — это объявленная функция, класс или метод, а не совпавшая строка. Остальные файлы — по тексту.
+В отчёт пишется снимок исходника: коммит, признак незакоммиченных правок, общий хэш файлов.
 
 Использование:
-  python3 tools/drift.py examples/<dir> [--repo /path/to/repo] [--strict] [--json]
-Код возврата 1, если есть дыры уровня ERROR (--strict переводит WARN в ERROR).
+  python3 tools/drift.py examples/<dir> [--repo /path/to/repo] [--strict] [--json] [--no-reverse]
+Код возврата 1, если есть дыры уровня ERROR (--strict переводит WARN в ERROR, кроме unmodeled и unconfirmed_constraint).
 """
 
 from __future__ import annotations
@@ -25,13 +31,18 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import code_inventory  # noqa: E402
+
 NOT_IMPLEMENTED = {"stub", "planned", "unconfirmed", "deprecated"}
+# уровень этих дыр задан правилом и в --strict не повышается
+STRICT_EXEMPT = {"unconfirmed_constraint", "unmodeled"}
 
 
 @dataclass
 class Hole:
     level: str  # ERROR | WARN | INFO
-    reason: str  # not_declared | not_bound | not_implemented | stale | unconfirmed_constraint | orphan | unused | unverifiable
+    reason: str  # not_declared | not_bound | not_implemented | stale | unconfirmed_constraint | orphan | unused | unverifiable | unmodeled
     process_id: str | None
     step_id: str | None
     capability_id: str | None
@@ -60,13 +71,35 @@ def _read(repo_root: Path, root_hint: str, rel: str) -> str | None:
         return None
 
 
-def check_binding_in_repo(b: dict[str, Any], repo_root: Path, root_hint: str) -> list[str]:
+def check_binding_in_repo(b: dict[str, Any], repo_root: Path, root_hint: str, inv: code_inventory.Inventory | None = None) -> list[str]:
     """Вернуть список расхождений с кодом (пусто — всё подтверждено)."""
     loc = b.get("location", {})
-    problems: list[str] = []
     path = loc.get("path")
     if not path:
         return ["нет location.path — проверить по коду нельзя"]
+    if inv is not None and path in inv.python_files:
+        return _check_by_inventory(loc, path, inv)
+    if inv is not None and path in inv.parse_errors:
+        return [f"файл не разобран: {path}: {inv.parse_errors[path]}"]
+    return _check_by_text(loc, path, repo_root, root_hint)
+
+
+def _check_by_inventory(loc: dict[str, Any], path: str, inv: code_inventory.Inventory) -> list[str]:
+    problems: list[str] = []
+    sym = loc.get("symbol")
+    if sym and not inv.has_symbol(path, sym):
+        problems.append(f"символ {sym!r} не объявлен в {path}")
+    route = loc.get("route")
+    if route and not inv.has_route(path, route["method"], route["path"]):
+        problems.append(f"маршрут {route['method']} {route['path']} не объявлен в {path}")
+    node = loc.get("graph_node")
+    if node and not inv.has_graph_node(path, node):
+        problems.append(f"узел графа {node!r} не объявлен в {path}")
+    return problems
+
+
+def _check_by_text(loc: dict[str, Any], path: str, repo_root: Path, root_hint: str) -> list[str]:
+    problems: list[str] = []
     text = _read(repo_root, root_hint, path)
     if text is None:
         return [f"файл не найден: {path}"]
@@ -83,8 +116,6 @@ def check_binding_in_repo(b: dict[str, Any], repo_root: Path, root_hint: str) ->
         prefix_m = re.search(r"APIRouter\([^)]*prefix\s*=\s*[\"']([^\"']+)[\"']", text)
         prefix = prefix_m.group(1) if prefix_m else ""
         tail = rpath[len(prefix):] if prefix and rpath.startswith(prefix) else rpath
-        if not tail:
-            tail = ""
         dec = rf"@\w+\.{method}\(\s*[\"']{re.escape(tail)}[\"']"
         if not re.search(dec, text):
             problems.append(f"маршрут {route['method']} {rpath} не найден в {path} (prefix={prefix!r}, tail={tail!r})")
@@ -94,10 +125,17 @@ def check_binding_in_repo(b: dict[str, Any], repo_root: Path, root_hint: str) ->
     return problems
 
 
-def check_storage_in_repo(st: dict[str, Any], repo_root: Path, root_hint: str) -> list[str]:
+def check_storage_in_repo(st: dict[str, Any], repo_root: Path, root_hint: str, inv: code_inventory.Inventory | None = None) -> list[str]:
     path, sym = st.get("path"), st.get("symbol")
     if not path:
         return []
+    if inv is not None and path in inv.python_files:
+        problems = []
+        if sym and not inv.has_symbol(path, sym):
+            problems.append(f"класс {sym!r} не объявлен в {path}")
+        if st.get("kind") == "table" and not inv.has_table(path, st["name"]):
+            problems.append(f"таблица {st['name']!r} не объявлена в {path} (__tablename__)")
+        return problems
     text = _read(repo_root, root_hint, path)
     if text is None:
         return [f"файл не найден: {path}"]
@@ -109,15 +147,45 @@ def check_storage_in_repo(st: dict[str, Any], repo_root: Path, root_hint: str) -
     return problems
 
 
+def reverse_holes(impl: dict[str, Any], inv: code_inventory.Inventory) -> list[Hole]:
+    """Обратный дрейф: маршруты, узлы графа и таблицы кода, которых нет в слое 5 (ADR-020)."""
+    routes, nodes, tables = set(), set(), set()
+    for b in impl.get("bindings", []):
+        loc = b.get("location", {})
+        if loc.get("route"):
+            routes.add((loc["route"]["method"].upper(), loc["route"]["path"]))
+        if loc.get("graph_node"):
+            nodes.add(loc["graph_node"])
+    for st in impl.get("storage", []):
+        if st.get("kind") == "table":
+            tables.add(st["name"])
+    holes = []
+    for r in inv.routes:
+        if (r["method"], r["path"]) not in routes:
+            holes.append(Hole("WARN", "unmodeled", None, None, None, f"маршрут {r['method']} {r['path']} ({r['file']}:{r['line']}, {r['handler']}) не описан в слое 5"))
+    for n in inv.graph_nodes:
+        if n["name"] not in nodes:
+            holes.append(Hole("WARN", "unmodeled", None, None, None, f"узел графа {n['name']!r} ({n['path']}:{n['line']}) не описан в слое 5"))
+    for tb in inv.tables:
+        if tb["name"] not in tables:
+            holes.append(Hole("WARN", "unmodeled", None, None, None, f"таблица {tb['name']!r} ({tb['path']}:{tb['line']}, {tb['class']}) не описана в storage слоя 5"))
+    return holes
+
+
 # ------------------------------------------------------------------- drift
 
 
-def run(example: Path, repo: Path | None, strict: bool) -> list[Hole]:
+def run(example: Path, repo: Path | None, strict: bool, reverse: bool = True) -> list[Hole]:
+    return run_with_snapshot(example, repo, strict, reverse)[0]
+
+
+def run_with_snapshot(example: Path, repo: Path | None, strict: bool, reverse: bool = True) -> tuple[list[Hole], dict[str, Any] | None]:
     processes = _load(example / "processes.json")["processes"]
     caps = {c["capability_id"]: c for c in _load(example / "capabilities.json")["capabilities"]}
     impl = _load(example / "implementation.json")
     bindings = impl.get("bindings", [])
     root_hint = impl.get("repository", {}).get("root", "")
+    inv = code_inventory.build(repo, root_hint) if repo else None
     by_cap: dict[str, list[dict[str, Any]]] = {}
     for b in bindings:
         by_cap.setdefault(b["capability_id"], []).append(b)
@@ -150,7 +218,7 @@ def run(example: Path, repo: Path | None, strict: bool) -> list[Hole]:
                     if b["kind"] == "mcp_tool" and not b.get("location", {}).get("path"):
                         holes.append(Hole("INFO", "unverifiable", proc["process_id"], step["step_id"], cid, "mcp_tool без пути в репозитории — сверяется списком инструментов сервера"))
                         continue
-                    for p in check_binding_in_repo(b, repo, root_hint):
+                    for p in check_binding_in_repo(b, repo, root_hint, inv):
                         holes.append(Hole("ERROR", "stale", proc["process_id"], step["step_id"], cid, p))
 
     # ADR-017: неподтверждённое критическое ограничение, применимое к процессу, — дыра в знании агента
@@ -182,16 +250,18 @@ def run(example: Path, repo: Path | None, strict: bool) -> list[Hole]:
         for st in impl.get("storage", []):
             if st.get("status", "implemented") != "implemented":
                 continue
-            for p in check_storage_in_repo(st, repo, root_hint):
+            for p in check_storage_in_repo(st, repo, root_hint, inv):
                 holes.append(Hole("ERROR", "stale", None, None, None, f"storage {st['name']}: {p}"))
+    if inv is not None and reverse:
+        holes.extend(reverse_holes(impl, inv))
     if strict:
         for h in holes:
-            # уровень неподтверждённого ограничения уже задан по severity (ADR-017): high в strict — WARN, не ERROR
-            if h.level == "WARN" and h.reason != "unconfirmed_constraint":
+            # уровень unconfirmed_constraint задан по severity (ADR-017), unmodeled — всегда WARN (ADR-020)
+            if h.level == "WARN" and h.reason not in STRICT_EXEMPT:
                 h.level = "ERROR"
     order = {"ERROR": 0, "WARN": 1, "INFO": 2}
-    holes.sort(key=lambda h: (order[h.level], h.reason, h.process_id or "", h.step_id or ""))
-    return holes
+    holes.sort(key=lambda h: (order[h.level], h.reason, h.process_id or "", h.step_id or "", h.detail))
+    return holes, (inv.snapshot if inv is not None else None)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -200,15 +270,21 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--repo", type=Path, help="корень репозитория для сверки привязок с кодом (только чтение)")
     ap.add_argument("--strict", action="store_true")
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--no-reverse", action="store_true", help="не искать в коде то, чего нет в модели (unmodeled)")
     args = ap.parse_args(argv)
     if args.repo and not args.repo.exists():
         print(f"репозиторий не найден: {args.repo}", file=sys.stderr)
         return 2
-    holes = run(args.example, args.repo, args.strict)
+    holes, snapshot = run_with_snapshot(args.example, args.repo, args.strict, not args.no_reverse)
     errors = sum(1 for h in holes if h.level == "ERROR")
     if args.json:
-        print(json.dumps({"holes": [asdict(h) for h in holes], "errors": errors}, ensure_ascii=False, indent=2))
+        report: dict[str, Any] = {"holes": [asdict(h) for h in holes], "errors": errors}
+        if snapshot is not None:
+            report["snapshot"] = snapshot
+        print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
+        if snapshot is not None:
+            print(f"-- снимок: commit={snapshot['commit'] or '-'} dirty={snapshot['dirty']} файлов={snapshot['files']} digest={snapshot['digest'][:12]}")
         for h in holes:
             print(h)
         counts: dict[str, int] = {}
