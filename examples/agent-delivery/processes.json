@@ -230,6 +230,71 @@
           }
         }
       ]
+    },
+    {
+      "process_id": "scheduled_drift",
+      "name": "Регулярная проверка модели против кода",
+      "status": "planned",
+      "description": "Рутина агента: по расписанию и после слияния в main прогнать drift со снимком исходника и завести задачи по новым дырам. В anchor пока не настроена — процесс planned.",
+      "trigger": {
+        "kind": "schedule",
+        "description": "Раз в сутки и после каждого слияния в main."
+      },
+      "aggregate_entity": "DriftRun",
+      "steps": [
+        {
+          "step_id": "run_drift",
+          "name": "Прогнать drift против кода",
+          "actor": "system",
+          "role": "delivery_scripts",
+          "capability_id": "run_drift",
+          "transition": {
+            "entity": "DriftRun",
+            "from": "running",
+            "to": "holes_found"
+          },
+          "emits": [
+            "DriftDetected"
+          ],
+          "next": [
+            "file_tasks"
+          ],
+          "description": "Нет дыр уровня WARN и выше — переход running → clean, задачи не заводятся."
+        },
+        {
+          "step_id": "file_tasks",
+          "name": "Завести задачи по новым дырам",
+          "actor": "agent",
+          "role": "orchestrator",
+          "capability_id": "file_drift_tasks",
+          "transition": {
+            "entity": "DriftRun",
+            "from": "holes_found",
+            "to": "filed"
+          }
+        }
+      ]
+    },
+    {
+      "process_id": "post_merge_docs",
+      "name": "Документация после слияния",
+      "status": "planned",
+      "description": "Рутина агента: после слияния сверить документацию с изменением и, если она отстала, поставить тему на её обновление. Правка документации сама проходит цикл поставки. В anchor пока не настроена — процесс planned.",
+      "trigger": {
+        "kind": "event",
+        "description": "PullRequestMerged, если изменение затронуло код с описанием в документации."
+      },
+      "aggregate_entity": "Topic",
+      "steps": [
+        {
+          "step_id": "refresh_docs",
+          "name": "Обновить документацию и сдать как тему",
+          "actor": "agent",
+          "role": "worker",
+          "capability_id": "refresh_docs",
+          "description": "Нечего менять — шаг завершается без запроса на слияние."
+        }
+      ]
     }
   ]
 }

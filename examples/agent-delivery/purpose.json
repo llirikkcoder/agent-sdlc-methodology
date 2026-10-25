@@ -221,6 +221,19 @@
       },
       "source": "anchor: DECISIONS — «смысловой конфликт двух тем ловит следующая проверка в main»; механизма остановки слияний нет",
       "status": "unconfirmed"
+    },
+    {
+      "id": "C013",
+      "rule": "Регулярная проверка не заводит задачу на дыру, по которой задача уже есть: дыра опознаётся по ключу drift:<причина>:<процесс>:<шаг>:<возможность>.",
+      "severity": "medium",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "file_drift_tasks"
+        ]
+      },
+      "source": "agent-sdlc-methodology: tools/holes_to_tasks.py (--skip-keys)",
+      "status": "confirmed"
     }
   ]
 }

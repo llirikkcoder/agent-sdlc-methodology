@@ -134,6 +134,25 @@
       },
       "evidence": "docs: commands/anchor-done.md — команда /anchor-done, шаги выполняет агент",
       "verified_at": "2026-10-26"
+    },
+    {
+      "capability_id": "run_drift",
+      "status": "planned",
+      "kind": "cli",
+      "evidence": "docs: в anchor рутины нет; инструмент — tools/drift.py <модель> --repo <код> --json из agent-sdlc-methodology",
+      "notes": "Запуск — по расписанию агента (scheduled task) или в CI после слияния."
+    },
+    {
+      "capability_id": "refresh_docs",
+      "status": "planned",
+      "kind": "llm_step",
+      "evidence": "docs: в anchor такой рутины нет; запуск — по событию слияния (CI) или по расписанию агента"
+    },
+    {
+      "capability_id": "file_drift_tasks",
+      "status": "planned",
+      "kind": "cli",
+      "evidence": "docs: tools/holes_to_tasks.py - --emit bd --skip-keys <заведённые ключи> из agent-sdlc-methodology"
     }
   ],
   "storage": [
@@ -193,6 +212,18 @@
     }
   ],
   "checks": [
+    {
+      "id": "worker_guard",
+      "command": "scripts/worker-guard (хук PreToolUse воркера)",
+      "stage": "on_edit",
+      "description": "ограда воркера в его сессии: релизы, push в main, секреты, прод — отказ до действия"
+    },
+    {
+      "id": "bash_pitfalls",
+      "command": "scripts/bash-pitfalls (хук PreToolUse(Bash) воркера)",
+      "stage": "on_edit",
+      "description": "ловушки Bash (потерянный код возврата и т. п.) в момент команды; пока режим счёта, не блок"
+    },
     {
       "id": "shell_syntax",
       "command": "sh -n hooks/anchor-session-start.sh && bash -n scripts/worker-done scripts/heavy",

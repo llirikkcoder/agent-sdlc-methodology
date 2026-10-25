@@ -333,6 +333,68 @@
           "actor_kind": "system"
         }
       ]
+    },
+    "DriftRun": {
+      "description": "Регулярный прогон drift модели против кода: по расписанию или после слияния в main.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "snapshot_commit",
+          "type": "string",
+          "description": "коммит кода, против которого шла проверка (ADR-020)"
+        },
+        {
+          "name": "holes",
+          "type": "integer"
+        },
+        {
+          "name": "tasks_filed",
+          "type": "integer"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "running",
+            "clean",
+            "holes_found",
+            "filed"
+          ]
+        }
+      ],
+      "states": [
+        "running",
+        "clean",
+        "holes_found",
+        "filed"
+      ],
+      "initial_state": "running",
+      "terminal_states": [
+        "clean",
+        "filed"
+      ],
+      "transitions": [
+        {
+          "from": "running",
+          "to": "clean",
+          "actor_kind": "system"
+        },
+        {
+          "from": "running",
+          "to": "holes_found",
+          "actor_kind": "system"
+        },
+        {
+          "from": "holes_found",
+          "to": "filed",
+          "actor_kind": "agent"
+        }
+      ]
     }
   },
   "domain_events": [

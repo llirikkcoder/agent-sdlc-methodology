@@ -257,6 +257,73 @@
       "allowed_roles": [
         "orchestrator"
       ]
+    },
+    {
+      "capability_id": "run_drift",
+      "name": "Прогнать drift модели против кода со снимком",
+      "kind": "cli",
+      "effect": "read",
+      "human_gate_required": false,
+      "touches_entities": [
+        "DriftRun"
+      ],
+      "inputs": {
+        "model": "path",
+        "repo": "path"
+      },
+      "outputs": {
+        "holes": "list",
+        "snapshot": "object"
+      },
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "file_drift_tasks",
+      "name": "Завести задачи в трекере по новым дырам",
+      "kind": "cli",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "DriftRun"
+      ],
+      "inputs": {
+        "holes": "list",
+        "skip_keys": "list"
+      },
+      "preconditions": [
+        "C013: ключ дыры ещё не заведён"
+      ],
+      "idempotency": "key",
+      "constraints": [
+        "C013"
+      ],
+      "allowed_roles": [
+        "orchestrator"
+      ]
+    },
+    {
+      "capability_id": "refresh_docs",
+      "name": "Обновить документацию по слитому изменению",
+      "kind": "llm_step",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Topic"
+      ],
+      "inputs": {
+        "merged_diff": "diff",
+        "docs_paths": "list"
+      },
+      "outputs": {
+        "pull_request": "number?"
+      },
+      "preconditions": [
+        "правка документации идёт обычной темой: дерево, гейты, самослияние (ADR-019)"
+      ],
+      "idempotency": "none",
+      "allowed_roles": [
+        "worker"
+      ]
     }
   ]
 }
