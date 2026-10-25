@@ -1,0 +1,262 @@
+{
+  "system_id": "ai_office_sales",
+  "processes": [
+    {
+      "process_id": "deal_onboarding",
+      "name": "Проведение сделки от заявки до оплаты",
+      "description": "Из исходной спецификации (deal_onboarding): проверка квалификации → предложение → счёт (человек) → оплата → закрытие. Этапы воронки — реальные статусы MCP update_deal_status.",
+      "status": "active",
+      "trigger": {
+        "kind": "human_request",
+        "description": "Менеджер передаёт агенту новую заявку или просит провести сделку дальше."
+      },
+      "aggregate_entity": "Deal",
+      "steps": [
+        {
+          "step_id": "fetch_deal",
+          "name": "Прочитать сделку",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "get_deal"
+        },
+        {
+          "step_id": "record_qualification",
+          "name": "Записать ответы квалификации со слов клиента",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "record_qualification",
+          "condition": "клиент назвал задачи, формат, срок и решающего; иначе агент спрашивает, не выдумывает (C005)",
+          "on_failure": "escalate"
+        },
+        {
+          "step_id": "move_to_qualification",
+          "name": "Перевести сделку в qualification",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "move_deal_stage",
+          "transition": {
+            "entity": "Deal",
+            "from": "processing",
+            "to": "qualification"
+          }
+        },
+        {
+          "step_id": "move_to_brief",
+          "name": "Перевести сделку в brief",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "move_deal_stage",
+          "transition": {
+            "entity": "Deal",
+            "from": "qualification",
+            "to": "brief"
+          }
+        },
+        {
+          "step_id": "draft_offer",
+          "name": "Подготовить черновик коммерческого предложения",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "create_offer",
+          "transition": {
+            "entity": "Offer",
+            "to": "draft"
+          }
+        },
+        {
+          "step_id": "send_offer",
+          "name": "Отправить КП клиенту",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "send_offer",
+          "human_gate": {
+            "required": true,
+            "reason": "constraint",
+            "approver_role": "owner",
+            "constraint_id": "C001",
+            "condition": "Offer.amount_usd > 1000 USD (threshold C001); ниже порога — автоматически, в StepRequested пишется gate_skipped",
+            "note": "ADR-010: условный гейт на необратимом действии допустим только через ограничение с машиночитаемым порогом."
+          },
+          "transition": {
+            "entity": "Offer",
+            "from": "active",
+            "to": "sent"
+          },
+          "emits": [
+            "OfferSent"
+          ],
+          "next": [
+            "move_to_proposal"
+          ]
+        },
+        {
+          "step_id": "move_to_proposal",
+          "name": "Перевести сделку в proposal",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "move_deal_stage",
+          "transition": {
+            "entity": "Deal",
+            "from": "brief",
+            "to": "proposal"
+          }
+        },
+        {
+          "step_id": "send_invoice",
+          "name": "Выставить счёт на оплату",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "send_invoice",
+          "human_gate": {
+            "required": true,
+            "reason": "irreversible",
+            "approver_role": "owner"
+          },
+          "transition": {
+            "entity": "Invoice",
+            "from": "draft",
+            "to": "sent"
+          },
+          "description": "Шаг из исходной спецификации (mcp_billing_send_invoice). Возможность не реализована — drift показывает дыру."
+        },
+        {
+          "step_id": "record_payment",
+          "name": "Записать полученную оплату",
+          "actor": "human",
+          "role": "owner",
+          "capability_id": "record_payment",
+          "emits": [
+            "PaymentRecorded"
+          ],
+          "description": "Только деньги, подтверждённые человеком (C005). Повтор той же суммы в тот же день — предупреждение, не вторая запись."
+        },
+        {
+          "step_id": "close_won",
+          "name": "Закрыть сделку как выполненную",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "move_deal_stage",
+          "transition": {
+            "entity": "Deal",
+            "from": "in_work",
+            "to": "done"
+          },
+          "condition": "оплата записана; иначе payment_hint и шаг не завершается"
+        }
+      ],
+      "outcomes": [
+        "сделка done с оплатой",
+        "сделка остаётся на этапе до решения человека"
+      ]
+    },
+    {
+      "process_id": "deal_loss_closure",
+      "name": "Закрытие проигранной сделки",
+      "status": "active",
+      "trigger": {
+        "kind": "human_request",
+        "description": "Менеджер сообщает, что клиент отказался или сделку сняли."
+      },
+      "aggregate_entity": "Deal",
+      "steps": [
+        {
+          "step_id": "ask_loss_reason",
+          "name": "Выяснить причину проигрыша у человека",
+          "actor": "human",
+          "role": "sales_manager",
+          "description": "Причина — одна из price/timing/trust/format/ghosted/other/not_client; агент её не угадывает (C003, C005)."
+        },
+        {
+          "step_id": "close_lost",
+          "name": "Перевести сделку в rejected/cancelled с причиной",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "move_deal_stage",
+          "transition": {
+            "entity": "Deal",
+            "from": "proposal",
+            "to": "rejected"
+          }
+        }
+      ]
+    },
+    {
+      "process_id": "stalled_deal_followup",
+      "name": "Напоминание о молчащих сделках",
+      "status": "active",
+      "trigger": {
+        "kind": "schedule",
+        "description": "Ежедневно утром: сделки без реального контакта N дней."
+      },
+      "aggregate_entity": "Deal",
+      "steps": [
+        {
+          "step_id": "list_stalled",
+          "name": "Найти сделки без контакта",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "list_deals"
+        },
+        {
+          "step_id": "create_followup_task",
+          "name": "Поставить задачу менеджеру",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "create_task"
+        },
+        {
+          "step_id": "log_touch",
+          "name": "Зафиксировать реальный контакт после звонка",
+          "actor": "human",
+          "role": "sales_manager",
+          "capability_id": "log_deal_touch",
+          "emits": [
+            "DealTouched"
+          ],
+          "description": "Только реальный контакт двигает last_contact_at (C004); агент сам touch не логирует."
+        },
+        {
+          "step_id": "escalate",
+          "name": "Эскалировать владельцу, если решение не за агентом",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "flag_for_human",
+          "condition": "неожиданное состояние или решение о бюджете",
+          "transition": {
+            "entity": "EscalationTask",
+            "to": "open"
+          },
+          "emits": [
+            "EscalationRaised"
+          ]
+        }
+      ]
+    },
+    {
+      "process_id": "contact_cleanup",
+      "name": "Удаление контакта",
+      "description": "Единственный путь удалить контакт: без сделок и ссылок, по решению владельца. Агент самостоятельно не удаляет (C002).",
+      "status": "active",
+      "trigger": {
+        "kind": "human_request",
+        "description": "Владелец просит удалить ошибочный/дублирующий контакт."
+      },
+      "aggregate_entity": "Contact",
+      "steps": [
+        {
+          "step_id": "delete",
+          "name": "Удалить контакт без связей",
+          "actor": "agent",
+          "role": "sales_agent",
+          "capability_id": "delete_contact",
+          "human_gate": {
+            "required": true,
+            "reason": "irreversible",
+            "approver_role": "owner",
+            "constraint_id": "C002"
+          }
+        }
+      ]
+    }
+  ]
+}

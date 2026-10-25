@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softoscope.local/schemas/implementation.schema.json",
+  "title": "Softoscope layer 5: implementation bindings",
+  "description": "Где возможности и сущности живут в коде прямо сейчас: файлы, символы, маршруты, таблицы, флаги. Этот слой меняется при каждом рефакторинге; drift-проверка сравнивает его со слоями 3–4 и с репозиторием.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["system_id", "repository", "bindings"],
+  "properties": {
+    "system_id": { "$ref": "#/$defs/id" },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "inspected_at"],
+      "properties": {
+        "name": { "type": "string" },
+        "root": { "type": "string", "description": "Корень кода относительно корня репозитория (для drift --repo)." },
+        "ref": { "type": "string", "description": "Ветка/коммит, по которым сверялось." },
+        "inspected_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" }
+      }
+    },
+    "bindings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/binding" }
+    },
+    "storage": {
+      "type": "array",
+      "description": "Хранилища сущностей и событий.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "kind"],
+        "properties": {
+          "name": { "type": "string" },
+          "kind": { "enum": ["table", "collection", "bucket", "file", "queue", "index"] },
+          "path": { "type": "string" },
+          "symbol": { "type": "string" },
+          "entities": { "type": "array", "items": { "$ref": "#/$defs/entity_name" } },
+          "append_only": { "type": "boolean" },
+          "status": { "$ref": "#/$defs/status" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "event_sinks": {
+      "type": "array",
+      "description": "Куда пишутся события (журнал аудита, лог событий).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "storage"],
+        "properties": {
+          "name": { "type": "string" },
+          "storage": { "type": "string", "description": "Имя из storage[]." },
+          "writer_path": { "type": "string" },
+          "writer_symbol": { "type": "string" },
+          "event_types": {
+            "type": "array",
+            "description": "Какие типы событий (в терминах кода) туда попадают.",
+            "items": { "type": "string" }
+          },
+          "status": { "$ref": "#/$defs/status" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "description": "Сторожа качества: команды, которые гоняет SDLC-конвейер.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "command"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "command": { "type": "string" },
+          "description": { "type": "string" },
+          "stage": { "enum": ["static_guard", "verify", "pre_merge"] }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "entity_name": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$" },
+    "status": {
+      "enum": ["implemented", "stub", "planned", "deprecated", "unconfirmed"],
+      "description": "implemented — есть и работает; stub — есть интерфейс/схема, не подключено; planned — только в документах; deprecated — есть, но уходит; unconfirmed — упоминается в документах, в коде не найдено."
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capability_id", "status", "kind", "evidence"],
+      "properties": {
+        "capability_id": { "$ref": "#/$defs/id" },
+        "status": { "$ref": "#/$defs/status" },
+        "kind": {
+          "enum": ["mcp_tool", "http_route", "function", "llm_step", "cli", "query", "ui_action", "external_call", "graph_node"]
+        },
+        "location": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": { "type": "string", "description": "Путь к файлу относительно repository.root." },
+            "symbol": { "type": "string", "description": "Функция/класс, реализующая возможность." },
+            "route": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["method", "path"],
+              "properties": {
+                "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+                "path": { "type": "string" }
+              }
+            },
+            "graph_node": { "type": "string", "description": "Имя узла графа исполнения (если возможность — узел)." },
+            "mcp": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["server", "tool"],
+              "properties": {
+                "server": { "type": "string" },
+                "tool": { "type": "string" }
+              }
+            },
+            "command": { "type": "string" }
+          }
+        },
+        "feature_flag": { "type": "string", "description": "Переменная окружения/флаг, за которым спрятана возможность." },
+        "evidence": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Чем подтверждено: 'code' (видел в коде), 'docs' (только документ), 'manual' (со слов)."
+        },
+        "verified_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

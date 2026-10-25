@@ -1,0 +1,155 @@
+{
+  "system_id": "ai_office_sales",
+  "spec_version": "0.1.0",
+  "purpose": "Автоматизировать операционные процессы продаж небольшой компании: вести сделки по воронке, фиксировать квалификацию и оплаты, готовить коммерческие предложения и напоминать о «молчащих» сделках, передавая решения о деньгах и удалении данных человеку.",
+  "goals": [
+    {
+      "id": "G001",
+      "statement": "Ни одно коммерческое предложение на сумму выше порога не уходит клиенту без согласования владельца.",
+      "metric": "число отправленных КП > 1000 USD без HumanGateResolved(approved) = 0"
+    },
+    {
+      "id": "G002",
+      "statement": "Каждая закрытая сделка имеет причину проигрыша или оплату.",
+      "metric": "доля rejected/cancelled без loss_reason = 0; доля done без payment = 0"
+    },
+    {
+      "id": "G003",
+      "statement": "Агент не выдумывает данные клиента: квалификация, суммы и даты берутся только из слов клиента или подтверждения человека.",
+      "metric": "число исправлений человеком записей агента (audit)"
+    }
+  ],
+  "non_goals": [
+    "Система не ведёт бухгалтерию и не выставляет счета сама — выставление счёта остаётся за человеком или внешним сервисом.",
+    "Система не удаляет контактные данные клиентов."
+  ],
+  "roles": [
+    {
+      "id": "owner",
+      "kind": "human",
+      "description": "Владелец компании: получает эскалации (Telegram), согласует суммы и удаления, подтверждает оплаты.",
+      "may_approve": true
+    },
+    {
+      "id": "sales_manager",
+      "kind": "human",
+      "description": "Менеджер по продажам: общается с клиентом, двигает сделки, диктует агенту факты."
+    },
+    {
+      "id": "sales_agent",
+      "kind": "agent",
+      "description": "ИИ-агент продаж: работает через MCP-сервер ai-office (list_deals, update_deal_status, record_qualification, create_offer, flag_for_human …)."
+    },
+    {
+      "id": "crm_system",
+      "kind": "system",
+      "description": "Серверная логика CRM: валидация переходов (422), напоминания, авто-квалификация, журнал agent_actions."
+    }
+  ],
+  "hard_constraints": [
+    {
+      "id": "C001",
+      "rule": "Запрещено отправлять коммерческое предложение на сумму выше 1000 USD без согласования владельца.",
+      "severity": "critical",
+      "enforcement": "gate",
+      "applies_to": {
+        "capabilities": [
+          "send_offer"
+        ],
+        "entities": [
+          "Offer",
+          "Deal"
+        ]
+      },
+      "source": "source/00-ishodnaya-specifikaciya-2026-10-25.md, C001",
+      "status": "confirmed",
+      "threshold": {
+        "attribute": "Offer.amount_usd",
+        "operator": ">",
+        "value": 1000,
+        "unit": "USD"
+      }
+    },
+    {
+      "id": "C002",
+      "rule": "Запрещено удалять контактные данные клиентов из базы.",
+      "severity": "critical",
+      "enforcement": "gate",
+      "applies_to": {
+        "capabilities": [
+          "delete_contact"
+        ],
+        "entities": [
+          "Contact"
+        ]
+      },
+      "source": "source/00-ishodnaya-specifikaciya-2026-10-25.md, C002; MCP delete_contact отказывает при наличии ссылок, force-режима нет",
+      "status": "confirmed"
+    },
+    {
+      "id": "C003",
+      "rule": "Сделку нельзя закрыть как rejected/cancelled без loss_reason; причину агент не угадывает, а спрашивает.",
+      "severity": "high",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "move_deal_stage"
+        ],
+        "entities": [
+          "Deal"
+        ]
+      },
+      "source": "MCP update_deal_status: 422 без loss_reason",
+      "status": "confirmed"
+    },
+    {
+      "id": "C004",
+      "rule": "last_contact_at меняется только реальным контактом с клиентом (log_deal_touch); правки заметок, этапов и полей агентом контактом не считаются.",
+      "severity": "high",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "log_deal_touch"
+        ],
+        "entities": [
+          "Deal"
+        ]
+      },
+      "source": "MCP log_deal_touch",
+      "status": "confirmed"
+    },
+    {
+      "id": "C005",
+      "rule": "Агент записывает только факты, сказанные клиентом или подтверждённые человеком: ответы квалификации, суммы оплат, даты и время следующего шага, причину проигрыша не выдумывает и не подставляет по умолчанию.",
+      "severity": "critical",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "record_qualification",
+          "record_payment",
+          "move_deal_stage",
+          "create_deal"
+        ]
+      },
+      "source": "MCP record_qualification / record_payment / update_deal_status / create_deal",
+      "status": "confirmed"
+    },
+    {
+      "id": "C006",
+      "rule": "Открытая сделка всегда имеет следующий шаг и его срок; с этапа qualification и далее — продукт из каталога.",
+      "severity": "medium",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "create_deal",
+          "move_deal_stage"
+        ],
+        "entities": [
+          "Deal"
+        ]
+      },
+      "source": "MCP create_deal / update_deal_status: 422",
+      "status": "confirmed"
+    }
+  ]
+}

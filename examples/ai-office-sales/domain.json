@@ -1,0 +1,645 @@
+{
+  "system_id": "ai_office_sales",
+  "entities": {
+    "Deal": {
+      "description": "Сделка (contact_request) в воронке продаж. Этапы — как в MCP update_deal_status; соответствие стадиям исходной спецификации (lead/qualification/proposal/closed_won/closed_lost) — в README примера.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "contact_id",
+          "type": "ref",
+          "ref": "Contact",
+          "required": true
+        },
+        {
+          "name": "channel_id",
+          "type": "integer"
+        },
+        {
+          "name": "product_id",
+          "type": "ref",
+          "ref": "Product"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "new_request",
+            "processing",
+            "qualification",
+            "brief",
+            "proposal",
+            "negotiation",
+            "contract",
+            "deal",
+            "in_work",
+            "done",
+            "rejected",
+            "cancelled"
+          ]
+        },
+        {
+          "name": "potential_value",
+          "type": "number",
+          "description": "Оценка суммы в RUB"
+        },
+        {
+          "name": "probability",
+          "type": "integer",
+          "description": "0–100, ставит человек"
+        },
+        {
+          "name": "next_step",
+          "type": "string"
+        },
+        {
+          "name": "due_date",
+          "type": "date"
+        },
+        {
+          "name": "action_type",
+          "type": "string",
+          "enum": [
+            "call",
+            "message",
+            "meeting",
+            "other"
+          ]
+        },
+        {
+          "name": "loss_reason",
+          "type": "string",
+          "enum": [
+            "price",
+            "timing",
+            "trust",
+            "format",
+            "ghosted",
+            "other",
+            "not_client"
+          ]
+        },
+        {
+          "name": "last_contact_at",
+          "type": "datetime"
+        }
+      ],
+      "states": [
+        "new_request",
+        "processing",
+        "qualification",
+        "brief",
+        "proposal",
+        "negotiation",
+        "contract",
+        "deal",
+        "in_work",
+        "done",
+        "rejected",
+        "cancelled"
+      ],
+      "initial_state": "new_request",
+      "terminal_states": [
+        "done",
+        "rejected",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from": "new_request",
+          "to": "processing",
+          "actor_kind": "agent",
+          "reversible": true
+        },
+        {
+          "from": "processing",
+          "to": "qualification",
+          "actor_kind": "agent",
+          "reversible": true,
+          "guard": "C006: product_id"
+        },
+        {
+          "from": "qualification",
+          "to": "brief",
+          "actor_kind": "agent",
+          "reversible": true,
+          "guard": "C005: ответы квалификации, если включена авто-квалификация"
+        },
+        {
+          "from": "brief",
+          "to": "proposal",
+          "actor_kind": "agent",
+          "reversible": true
+        },
+        {
+          "from": "proposal",
+          "to": "negotiation",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "negotiation",
+          "to": "contract",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "contract",
+          "to": "deal",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "deal",
+          "to": "in_work",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "in_work",
+          "to": "done",
+          "actor_kind": "human",
+          "reversible": false,
+          "guard": "оплата записана (record_payment)"
+        },
+        {
+          "from": "processing",
+          "to": "new_request",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "qualification",
+          "to": "processing",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "brief",
+          "to": "qualification",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "proposal",
+          "to": "brief",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "negotiation",
+          "to": "proposal",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "contract",
+          "to": "negotiation",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "deal",
+          "to": "contract",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "in_work",
+          "to": "deal",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "new_request",
+          "to": "rejected",
+          "actor_kind": "agent",
+          "reversible": false,
+          "guard": "C003: loss_reason"
+        },
+        {
+          "from": "processing",
+          "to": "rejected",
+          "actor_kind": "agent",
+          "reversible": false,
+          "guard": "C003: loss_reason"
+        },
+        {
+          "from": "qualification",
+          "to": "rejected",
+          "actor_kind": "agent",
+          "reversible": false,
+          "guard": "C003: loss_reason"
+        },
+        {
+          "from": "brief",
+          "to": "rejected",
+          "actor_kind": "agent",
+          "reversible": false,
+          "guard": "C003: loss_reason"
+        },
+        {
+          "from": "proposal",
+          "to": "rejected",
+          "actor_kind": "agent",
+          "reversible": false,
+          "guard": "C003: loss_reason"
+        },
+        {
+          "from": "negotiation",
+          "to": "rejected",
+          "actor_kind": "agent",
+          "reversible": false,
+          "guard": "C003: loss_reason"
+        },
+        {
+          "from": "proposal",
+          "to": "cancelled",
+          "actor_kind": "human",
+          "reversible": false,
+          "guard": "C003: loss_reason"
+        },
+        {
+          "from": "negotiation",
+          "to": "cancelled",
+          "actor_kind": "human",
+          "reversible": false,
+          "guard": "C003: loss_reason"
+        }
+      ],
+      "relations": [
+        {
+          "name": "contact",
+          "target": "Contact",
+          "cardinality": "one"
+        },
+        {
+          "name": "payments",
+          "target": "Payment",
+          "cardinality": "many"
+        },
+        {
+          "name": "qualification",
+          "target": "QualificationRecord",
+          "cardinality": "one"
+        }
+      ],
+      "invariants": [
+        "открытая сделка имеет next_step и due_date (C006)",
+        "закрытая проигрышем сделка имеет loss_reason (C003)"
+      ]
+    },
+    "Contact": {
+      "description": "Клиент/контактное лицо. Удаление запрещено (C002).",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "sensitive": true
+        },
+        {
+          "name": "phone",
+          "type": "string",
+          "sensitive": true
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "sensitive": true
+        },
+        {
+          "name": "company_id",
+          "type": "integer"
+        }
+      ]
+    },
+    "Product": {
+      "description": "Продукт каталога; обязателен у сделки с этапа qualification.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "price",
+          "type": "number"
+        }
+      ]
+    },
+    "QualificationRecord": {
+      "description": "Ответы клиента на вопросы квалификации (что хочет, формат, срок, кто решает, бюджет).",
+      "identity": "deal_id",
+      "attributes": [
+        {
+          "name": "deal_id",
+          "type": "ref",
+          "ref": "Deal",
+          "required": true
+        },
+        {
+          "name": "tasks",
+          "type": "list"
+        },
+        {
+          "name": "formats",
+          "type": "list"
+        },
+        {
+          "name": "deadline",
+          "type": "string",
+          "enum": [
+            "this_month",
+            "3_months",
+            "later",
+            "no_rush"
+          ]
+        },
+        {
+          "name": "decider",
+          "type": "string",
+          "enum": [
+            "self",
+            "with_partner",
+            "other_person"
+          ]
+        },
+        {
+          "name": "budget_rub",
+          "type": "integer"
+        },
+        {
+          "name": "answered_by",
+          "type": "string"
+        }
+      ]
+    },
+    "Offer": {
+      "description": "Коммерческое предложение / шаблон рассылки.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "template_type",
+          "type": "string",
+          "enum": [
+            "offer",
+            "newsletter",
+            "notification",
+            "followup",
+            "welcome",
+            "custom"
+          ]
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "enum": [
+            "email",
+            "telegram",
+            "both"
+          ]
+        },
+        {
+          "name": "amount_usd",
+          "type": "number",
+          "description": "Сумма предложения; порог C001 = 1000"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "draft",
+            "active",
+            "archived",
+            "sent"
+          ]
+        }
+      ],
+      "states": [
+        "draft",
+        "active",
+        "sent",
+        "archived"
+      ],
+      "initial_state": "draft",
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "active",
+          "actor_kind": "agent",
+          "reversible": true
+        },
+        {
+          "from": "active",
+          "to": "draft",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "active",
+          "to": "sent",
+          "actor_kind": "agent",
+          "reversible": false,
+          "guard": "C001"
+        },
+        {
+          "from": "active",
+          "to": "archived",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "archived",
+          "to": "active",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "sent",
+          "to": "archived",
+          "actor_kind": "human",
+          "reversible": false
+        }
+      ]
+    },
+    "Invoice": {
+      "description": "Счёт на оплату. В исходной спецификации выставляется через finance_mcp.send_invoice; в текущем MCP-сервере такого инструмента нет — сущность и возможность помечены planned.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "deal_id",
+          "type": "ref",
+          "ref": "Deal",
+          "required": true
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "draft",
+            "sent",
+            "paid"
+          ]
+        }
+      ],
+      "states": [
+        "draft",
+        "sent",
+        "paid"
+      ],
+      "initial_state": "draft",
+      "terminal_states": [
+        "paid"
+      ],
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "sent",
+          "actor_kind": "agent",
+          "reversible": false
+        },
+        {
+          "from": "sent",
+          "to": "paid",
+          "actor_kind": "human",
+          "reversible": false
+        }
+      ]
+    },
+    "Payment": {
+      "description": "Полученная оплата по сделке (только подтверждённая человеком).",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "deal_id",
+          "type": "ref",
+          "ref": "Deal",
+          "required": true
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "paid_at",
+          "type": "date"
+        }
+      ]
+    },
+    "EscalationTask": {
+      "description": "Эскалация человеку (flag_for_human): задача с высоким приоритетом + уведомление владельцу.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "urgency",
+          "type": "string",
+          "enum": [
+            "normal",
+            "high",
+            "critical"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "open",
+            "resolved"
+          ]
+        }
+      ],
+      "states": [
+        "open",
+        "resolved"
+      ],
+      "initial_state": "open",
+      "terminal_states": [
+        "resolved"
+      ],
+      "transitions": [
+        {
+          "from": "open",
+          "to": "resolved",
+          "actor_kind": "human",
+          "reversible": false
+        }
+      ]
+    }
+  },
+  "domain_events": [
+    {
+      "name": "DealTouched",
+      "entity": "Deal",
+      "description": "Зафиксирован реальный контакт с клиентом (log_deal_touch)."
+    },
+    {
+      "name": "PaymentRecorded",
+      "entity": "Payment",
+      "description": "Оплата записана по подтверждению человека."
+    },
+    {
+      "name": "OfferSent",
+      "entity": "Offer",
+      "description": "КП отправлено клиенту (после гейта C001)."
+    },
+    {
+      "name": "EscalationRaised",
+      "entity": "EscalationTask",
+      "description": "Агент передал ситуацию владельцу."
+    }
+  ]
+}

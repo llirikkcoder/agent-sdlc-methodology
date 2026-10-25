@@ -1,0 +1,294 @@
+{
+  "system_id": "ai_office_sales",
+  "capabilities": [
+    {
+      "capability_id": "get_deal",
+      "name": "Получить сделку по id",
+      "kind": "mcp_tool",
+      "effect": "read",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Deal"
+      ],
+      "inputs": {
+        "deal_id": "uuid"
+      },
+      "outputs": {
+        "deal": "object"
+      },
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "list_deals",
+      "name": "Список сделок с фильтрами (в т.ч. молчащие)",
+      "kind": "mcp_tool",
+      "effect": "read",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Deal"
+      ],
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "create_deal",
+      "name": "Создать сделку",
+      "kind": "mcp_tool",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Deal",
+        "Contact"
+      ],
+      "inputs": {
+        "company_id": "int",
+        "contact_id": "uuid",
+        "channel_id|source": "string",
+        "next_step": "string",
+        "due_date": "date",
+        "product_id": "uuid?"
+      },
+      "preconditions": [
+        "C006: next_step+due_date для открытых этапов",
+        "C005: даты не выдумываются"
+      ],
+      "idempotency": "none",
+      "constraints": [
+        "C005",
+        "C006"
+      ]
+    },
+    {
+      "capability_id": "record_qualification",
+      "name": "Записать ответы квалификации клиента",
+      "kind": "mcp_tool",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "QualificationRecord",
+        "Deal"
+      ],
+      "inputs": {
+        "deal_id": "uuid",
+        "tasks": "list",
+        "formats": "list",
+        "deadline": "enum",
+        "decider": "enum",
+        "budget_rub": "int?"
+      },
+      "preconditions": [
+        "C005: только сказанное клиентом"
+      ],
+      "idempotency": "natural",
+      "constraints": [
+        "C005"
+      ],
+      "description": "Повторный вызов перезаписывает ответы; прежние остаются в истории сделки."
+    },
+    {
+      "capability_id": "move_deal_stage",
+      "name": "Перевести сделку на этап воронки",
+      "kind": "mcp_tool",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Deal"
+      ],
+      "inputs": {
+        "deal_id": "uuid",
+        "new_status": "enum",
+        "loss_reason": "enum?",
+        "next_step": "string?",
+        "due_date": "date?",
+        "product_id": "uuid?"
+      },
+      "preconditions": [
+        "C003 при rejected/cancelled",
+        "C006 при открытых этапах",
+        "ответы квалификации при авто-квалификации"
+      ],
+      "idempotency": "natural",
+      "constraints": [
+        "C003",
+        "C005",
+        "C006"
+      ],
+      "description": "Закрытие done без оплаты возвращает payment_hint — агент спрашивает человека и вызывает record_payment."
+    },
+    {
+      "capability_id": "create_offer",
+      "name": "Создать черновик КП / шаблона",
+      "kind": "mcp_tool",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Offer"
+      ],
+      "inputs": {
+        "company_id": "int",
+        "name": "string",
+        "template_type": "enum",
+        "channel": "enum",
+        "body_text": "string?"
+      },
+      "idempotency": "none"
+    },
+    {
+      "capability_id": "send_offer",
+      "name": "Отправить КП клиенту",
+      "kind": "external_call",
+      "effect": "write_irreversible",
+      "human_gate_required": true,
+      "allowed_roles": [
+        "sales_agent",
+        "sales_manager",
+        "owner"
+      ],
+      "touches_entities": [
+        "Offer",
+        "Deal",
+        "Contact"
+      ],
+      "inputs": {
+        "offer_id": "uuid",
+        "deal_id": "uuid"
+      },
+      "external_side_effects": true,
+      "idempotency": "key",
+      "constraints": [
+        "C001"
+      ],
+      "description": "Сообщение уходит клиенту — отозвать нельзя. Гейт по C001 условный: выше 1000 USD решает владелец, ниже — отправка автоматическая с записью gate_skipped (ADR-010)."
+    },
+    {
+      "capability_id": "send_invoice",
+      "name": "Выставить счёт на оплату",
+      "kind": "mcp_tool",
+      "effect": "write_irreversible",
+      "human_gate_required": true,
+      "allowed_roles": [
+        "owner"
+      ],
+      "touches_entities": [
+        "Invoice",
+        "Deal"
+      ],
+      "inputs": {
+        "deal_id": "uuid",
+        "amount": "number"
+      },
+      "external_side_effects": true,
+      "idempotency": "key",
+      "description": "Из исходной спецификации: finance_mcp.send_invoice. Реализации нет."
+    },
+    {
+      "capability_id": "record_payment",
+      "name": "Записать полученную оплату",
+      "kind": "mcp_tool",
+      "effect": "write_compensable",
+      "compensation": {
+        "description": "Сторнирующая запись/правка в кабинете человеком; инструмента отмены в MCP нет."
+      },
+      "human_gate_required": false,
+      "allowed_roles": [
+        "owner",
+        "sales_manager"
+      ],
+      "touches_entities": [
+        "Payment",
+        "Deal"
+      ],
+      "inputs": {
+        "deal_id": "uuid",
+        "amount": "number",
+        "paid_at": "date?"
+      },
+      "preconditions": [
+        "C005: только подтверждённые человеком деньги"
+      ],
+      "idempotency": "natural",
+      "constraints": [
+        "C005"
+      ],
+      "description": "Повтор той же суммы в тот же день возвращает warning вместо второй записи."
+    },
+    {
+      "capability_id": "log_deal_touch",
+      "name": "Зафиксировать реальный контакт с клиентом",
+      "kind": "mcp_tool",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "allowed_roles": [
+        "sales_manager",
+        "owner"
+      ],
+      "touches_entities": [
+        "Deal"
+      ],
+      "inputs": {
+        "deal_id": "uuid",
+        "channel": "enum",
+        "summary": "string?",
+        "at": "datetime?"
+      },
+      "idempotency": "natural",
+      "constraints": [
+        "C004"
+      ]
+    },
+    {
+      "capability_id": "create_task",
+      "name": "Поставить задачу человеку",
+      "kind": "mcp_tool",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Deal"
+      ],
+      "idempotency": "none"
+    },
+    {
+      "capability_id": "flag_for_human",
+      "name": "Эскалировать владельцу (Telegram + задача + аудит)",
+      "kind": "mcp_tool",
+      "effect": "write_compensable",
+      "compensation": {
+        "description": "Повторное сообщение с отбоем; задачу закрывает человек."
+      },
+      "human_gate_required": false,
+      "touches_entities": [
+        "EscalationTask"
+      ],
+      "inputs": {
+        "company_id": "int",
+        "message": "string",
+        "context": "string?",
+        "urgency": "enum"
+      },
+      "external_side_effects": true,
+      "idempotency": "none"
+    },
+    {
+      "capability_id": "delete_contact",
+      "name": "Удалить контакт без связей",
+      "kind": "mcp_tool",
+      "effect": "write_irreversible",
+      "human_gate_required": true,
+      "allowed_roles": [
+        "owner"
+      ],
+      "touches_entities": [
+        "Contact"
+      ],
+      "inputs": {
+        "contact_id": "uuid"
+      },
+      "preconditions": [
+        "у контакта нет сделок и ссылок — иначе отказ со списком; force-режима нет"
+      ],
+      "idempotency": "natural",
+      "constraints": [
+        "C002"
+      ]
+    }
+  ]
+}

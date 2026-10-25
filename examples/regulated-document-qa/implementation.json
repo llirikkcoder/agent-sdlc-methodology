@@ -1,0 +1,757 @@
+{
+  "system_id": "regulated_document_qa",
+  "repository": {
+    "name": "закрытая пилотная система (обезличено: имена репозитория, модулей и таблиц заменены, структура привязок сохранена)",
+    "root": "backend/src/app",
+    "ref": "main, 25.10.2026",
+    "inspected_at": "2026-10-25"
+  },
+  "bindings": [
+    {
+      "capability_id": "upload_document",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/upload.py",
+        "symbol": "upload_document",
+        "route": {
+          "method": "POST",
+          "path": "/upload"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Также /upload/stream, /upload/async, /upload/dossier-pdf, /upload/foundation*."
+    },
+    {
+      "capability_id": "decompose_request",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/prepare.py",
+        "symbol": "decompose",
+        "route": {
+          "method": "POST",
+          "path": "/prepare/decompose"
+        }
+      },
+      "feature_flag": "PREPARE_FLOW_ENABLED",
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "decompose_request",
+      "status": "implemented",
+      "kind": "llm_step",
+      "location": {
+        "path": "agent/decomposer.py",
+        "symbol": "decompose_request"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "generate_leaf_draft",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/prepare.py",
+        "symbol": "generate_drafts",
+        "route": {
+          "method": "POST",
+          "path": "/prepare/{request_id}/generate-drafts"
+        }
+      },
+      "feature_flag": "PREPARE_FLOW_ENABLED",
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Пер-лист: POST /prepare/leaf/{leaf_id}/generate (generate_leaf)."
+    },
+    {
+      "capability_id": "generate_leaf_draft",
+      "status": "implemented",
+      "kind": "llm_step",
+      "location": {
+        "path": "agent/leaf_answer.py",
+        "symbol": "generate_leaf_draft"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "judge_answer",
+      "status": "implemented",
+      "kind": "function",
+      "location": {
+        "path": "agent/gxp_gate.py",
+        "symbol": "evaluate_gate"
+      },
+      "feature_flag": "GXP_VALIDATION_GATE_ENABLED",
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Детерминированное решение по трём оценкам reflect-узла; порог GXP_VALIDATION_THRESHOLD (0.7), нижняя граница критерия 0.6 (SPEC-G1)."
+    },
+    {
+      "capability_id": "judge_answer",
+      "status": "implemented",
+      "kind": "llm_step",
+      "location": {
+        "path": "validation/gxp_validator.py",
+        "symbol": "validate_response"
+      },
+      "feature_flag": "GXP_GATE_ENABLED",
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Вторая реализация судьи (validation/gate.py apply_gate) — для чат-эндпоинта; оркестратор validation/gate.py."
+    },
+    {
+      "capability_id": "judge_answer",
+      "status": "implemented",
+      "kind": "graph_node",
+      "location": {
+        "path": "agent/graph.py",
+        "graph_node": "reflect"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "submit_node_for_review",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/prepare.py",
+        "symbol": "node_answer",
+        "route": {
+          "method": "POST",
+          "path": "/prepare/node/{node_id}/answer"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Тот же маршрут, что approve: body {to_review: true}."
+    },
+    {
+      "capability_id": "assign_node_reviewer",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/prepare.py",
+        "symbol": "node_assignee",
+        "route": {
+          "method": "POST",
+          "path": "/prepare/node/{node_id}/assignee"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "approve_request_node",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/prepare.py",
+        "symbol": "node_answer",
+        "route": {
+          "method": "POST",
+          "path": "/prepare/node/{node_id}/answer"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "body {approve: true, expert_answer?}; C002 проверяется до изменений (403)."
+    },
+    {
+      "capability_id": "rework_request_node",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/prepare.py",
+        "symbol": "node_rework",
+        "route": {
+          "method": "POST",
+          "path": "/prepare/node/{node_id}/rework"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Технический откат approved→review: node_reject (POST /prepare/node/{node_id}/reject)."
+    },
+    {
+      "capability_id": "assemble_response",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/prepare.py",
+        "symbol": "assemble",
+        "route": {
+          "method": "POST",
+          "path": "/prepare/{request_id}/assemble"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "assemble_response",
+      "status": "implemented",
+      "kind": "function",
+      "location": {
+        "path": "agent/assembler.py",
+        "symbol": "assemble_response"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "export_response",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/prepare.py",
+        "symbol": "export_response",
+        "route": {
+          "method": "GET",
+          "path": "/prepare/{request_id}/export"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "analyze_query",
+      "status": "implemented",
+      "kind": "graph_node",
+      "location": {
+        "path": "agent/graph.py",
+        "graph_node": "query_analysis"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "analyze_query",
+      "status": "implemented",
+      "kind": "function",
+      "location": {
+        "path": "agent/nodes.py",
+        "symbol": "make_query_analysis_node"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "read_attached_file",
+      "status": "implemented",
+      "kind": "graph_node",
+      "location": {
+        "path": "agent/graph.py",
+        "graph_node": "read_file"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "read_attached_file",
+      "status": "implemented",
+      "kind": "function",
+      "location": {
+        "path": "agent/nodes.py",
+        "symbol": "make_read_uploaded_file_node"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "resolve_search_query",
+      "status": "implemented",
+      "kind": "graph_node",
+      "location": {
+        "path": "agent/graph.py",
+        "graph_node": "resolve_search_query"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "resolve_search_query",
+      "status": "implemented",
+      "kind": "function",
+      "location": {
+        "path": "agent/nodes.py",
+        "symbol": "make_resolve_search_query_node"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "expand_query",
+      "status": "implemented",
+      "kind": "graph_node",
+      "location": {
+        "path": "agent/graph.py",
+        "graph_node": "query_expansion"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "expand_query",
+      "status": "implemented",
+      "kind": "function",
+      "location": {
+        "path": "agent/nodes.py",
+        "symbol": "make_query_expansion_node"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "hyde_generate",
+      "status": "implemented",
+      "kind": "graph_node",
+      "location": {
+        "path": "agent/graph.py",
+        "graph_node": "hyde"
+      },
+      "feature_flag": "HYDE_ENABLED",
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Имя флага — по hyde_enabled() в agent/hyde.py; точное имя переменной не сверялось."
+    },
+    {
+      "capability_id": "retrieve_evidence",
+      "status": "implemented",
+      "kind": "graph_node",
+      "location": {
+        "path": "agent/graph.py",
+        "graph_node": "sgr_search"
+      },
+      "feature_flag": "USE_INTENT_SEARCH",
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Узел подменяется стратегией: intent-aware (make_intent_aware_search_node), SGR (run_agentic_retrieval), legacy search_dossier+rerank_bm25."
+    },
+    {
+      "capability_id": "retrieve_evidence",
+      "status": "implemented",
+      "kind": "function",
+      "location": {
+        "path": "agent/intent_aware_search.py",
+        "symbol": "make_intent_aware_search_node"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "generate_answer",
+      "status": "implemented",
+      "kind": "graph_node",
+      "location": {
+        "path": "agent/graph.py",
+        "graph_node": "answer_question"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "generate_answer",
+      "status": "implemented",
+      "kind": "function",
+      "location": {
+        "path": "agent/nodes.py",
+        "symbol": "make_answer_question_node"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "deliver_chat_answer",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/chat.py",
+        "symbol": "v1_chat_stream",
+        "route": {
+          "method": "POST",
+          "path": "/v1/chat/stream"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Legacy-алиасы POST /chat и /chat/stream помечены deprecated. Текст при провале гейта — validation/gate.py PENDING_HUMAN_MESSAGE."
+    },
+    {
+      "capability_id": "enqueue_review_item",
+      "status": "implemented",
+      "kind": "function",
+      "location": {
+        "path": "db/fallback_queue.py",
+        "symbol": "enqueue_fallback"
+      },
+      "feature_flag": "HUMAN_FALLBACK_ENABLED",
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Вызывается из agent/gxp_gate.py enqueue_failed_to_fallback / enqueue_no_answer_to_fallback."
+    },
+    {
+      "capability_id": "claim_review_item",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/fallback_queue.py",
+        "symbol": "claim_item",
+        "route": {
+          "method": "POST",
+          "path": "/fallback/{item_id}/claim"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "save_review_draft",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/fallback_queue.py",
+        "symbol": "save_item",
+        "route": {
+          "method": "POST",
+          "path": "/fallback/{item_id}/save"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "answer_review_item",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/fallback_queue.py",
+        "symbol": "answer_item",
+        "route": {
+          "method": "POST",
+          "path": "/fallback/{item_id}/answer"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "reject_review_item",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/fallback_queue.py",
+        "symbol": "reject_item",
+        "route": {
+          "method": "POST",
+          "path": "/fallback/{item_id}/reject"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "reopen_review_item",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/fallback_queue.py",
+        "symbol": "reopen_item",
+        "route": {
+          "method": "POST",
+          "path": "/fallback/{item_id}/reopen"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "notify_review_status",
+      "status": "stub",
+      "kind": "external_call",
+      "location": {
+        "path": "db/fallback_notify.py",
+        "symbol": "notify_status_change"
+      },
+      "feature_flag": "NOTIFY_ENABLED",
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Код есть (HTTP POST на NOTIFY_WEBHOOK_URL), по умолчанию выключен; подключённый приёмник уведомлений не подтверждён."
+    },
+    {
+      "capability_id": "index_document",
+      "status": "implemented",
+      "kind": "function",
+      "location": {
+        "path": "tasks/single_file_ingest.py",
+        "symbol": "ingest_single_file"
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Полный проход по S3 — scripts/index_dossier.py (вне root, не сверялся drift-инструментом)."
+    },
+    {
+      "capability_id": "reindex_document",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/assistant.py",
+        "symbol": "reindex_source",
+        "route": {
+          "method": "POST",
+          "path": "/collection/sources/{source:path}/reindex"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "delete_corpus_document",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/assistant.py",
+        "symbol": "delete_source_from_collection",
+        "route": {
+          "method": "DELETE",
+          "path": "/collection/sources/{source:path}"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "trigger_ingest_pass",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/admin.py",
+        "symbol": "ingest_trigger",
+        "route": {
+          "method": "POST",
+          "path": "/admin/ingest-trigger"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Документ backend-architecture.md указывает префикс /api/admin; в коде prefix='/admin' (прокси срезает /api)."
+    },
+    {
+      "capability_id": "run_ingest_pass",
+      "status": "unconfirmed",
+      "kind": "cli",
+      "location": {
+        "command": "python scripts/ingest_one_pass.py / index_dossier.py --event"
+      },
+      "evidence": "docs",
+      "notes": "Скрипт прохода лежит вне backend/src (scripts/), в рамках задачи не открывался; в src есть обёртка tasks/ingest_task.py. Журнал — ingest_events (D-MEASURE)."
+    },
+    {
+      "capability_id": "read_ingest_status",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/admin.py",
+        "symbol": "ingest_status",
+        "route": {
+          "method": "GET",
+          "path": "/admin/ingest-status"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25"
+    },
+    {
+      "capability_id": "read_audit_trail",
+      "status": "implemented",
+      "kind": "http_route",
+      "location": {
+        "path": "api/routers/admin.py",
+        "symbol": "get_chat_audit_global",
+        "route": {
+          "method": "GET",
+          "path": "/admin/chat-audit"
+        }
+      },
+      "evidence": "code",
+      "verified_at": "2026-10-25",
+      "notes": "Также GET /chats/{chat_id}/audit (chats_sessions.py get_chat_audit)."
+    }
+  ],
+  "storage": [
+    {
+      "name": "request_trees",
+      "kind": "table",
+      "path": "db/models.py",
+      "symbol": "RequestTree",
+      "entities": [
+        "RegulatorRequest"
+      ]
+    },
+    {
+      "name": "request_questions",
+      "kind": "table",
+      "path": "db/models.py",
+      "symbol": "RequestQuestionRow",
+      "entities": [
+        "RequestQuestion"
+      ]
+    },
+    {
+      "name": "request_nodes",
+      "kind": "table",
+      "path": "db/models.py",
+      "symbol": "RequestNodeRow",
+      "entities": [
+        "RequestNode"
+      ]
+    },
+    {
+      "name": "fallback_queue",
+      "kind": "table",
+      "path": "db/models.py",
+      "symbol": "FallbackItem",
+      "entities": [
+        "ReviewItem"
+      ]
+    },
+    {
+      "name": "chats",
+      "kind": "table",
+      "path": "db/models.py",
+      "symbol": "Chat",
+      "entities": [
+        "ChatSession"
+      ]
+    },
+    {
+      "name": "chat_messages",
+      "kind": "table",
+      "path": "db/models.py",
+      "symbol": "ChatMessage",
+      "entities": [
+        "ChatMessage"
+      ]
+    },
+    {
+      "name": "chat_audit_events",
+      "kind": "table",
+      "path": "db/models.py",
+      "symbol": "ChatAuditEvent",
+      "append_only": true,
+      "notes": "Без FK на chats; переживает удаление чата (C003)."
+    },
+    {
+      "name": "ingest_events",
+      "kind": "table",
+      "path": "db/models.py",
+      "symbol": "IngestEvent",
+      "entities": [
+        "IngestRun"
+      ],
+      "append_only": true
+    },
+    {
+      "name": "answer_records",
+      "kind": "table",
+      "path": "db/models.py",
+      "symbol": "AnswerRecordRow",
+      "entities": [
+        "AnswerRecord"
+      ]
+    },
+    {
+      "name": "users",
+      "kind": "table",
+      "path": "db/models.py",
+      "symbol": "User",
+      "entities": [
+        "User"
+      ]
+    },
+    {
+      "name": "chunks",
+      "kind": "table",
+      "path": "infrastructure/vector/pgvector_store.py",
+      "entities": [
+        "CorpusDocument"
+      ],
+      "notes": "DDL параметризована именем таблицы: chunks (384) / chunks_768 (GTE-768, прод). Коллекции app_dossier_v2_gte, app_regulations_v2, app_user_uploads."
+    },
+    {
+      "name": "fallback_events",
+      "kind": "table",
+      "status": "unconfirmed",
+      "notes": "Упомянута в docs/architecture/flows/audit-flow.mmd как planned; в db/models.py отсутствует — действия эксперта пишутся в chat_audit_events (fallback_*)."
+    }
+  ],
+  "event_sinks": [
+    {
+      "name": "audit_trail",
+      "storage": "chat_audit_events",
+      "writer_path": "db/repository.py",
+      "writer_symbol": "record_audit_event",
+      "event_types": [
+        "chat_created",
+        "chat_deleted",
+        "message_created",
+        "file_attached",
+        "gxp_validation_run",
+        "fallback_enqueued",
+        "fallback_claimed",
+        "fallback_draft_saved",
+        "fallback_resolved",
+        "fallback_rejected",
+        "fallback_reopened",
+        "request_node_approved",
+        "request_node_rejected",
+        "request_node_reworked",
+        "request_node_assigned",
+        "document_uploaded",
+        "document_indexed",
+        "document_reindexed",
+        "document_deleted",
+        "document_ingest_failed",
+        "user_created",
+        "user_updated",
+        "password_changed",
+        "sso_user_provisioned",
+        "api_key_created",
+        "drug_registry_changed"
+      ],
+      "status": "implemented",
+      "notes": "Формат записи: {event_type, chat_id, message_id, user_id, changes[{field,before,after}], meta}. Соответствие базовому контракту события — см. README примера."
+    },
+    {
+      "name": "ingest_journal",
+      "storage": "ingest_events",
+      "status": "implemented",
+      "notes": "Строка на проход + stages JSONB + heartbeat (SPEC-R51)."
+    }
+  ],
+  "checks": [
+    {
+      "id": "lint_python",
+      "command": "make lint",
+      "description": "black 26.5.1 + ruff 0.13.0 (пиннутые версии CI), в т.ч. запрет кириллицы в идентификаторах PLC2401/PLC2403",
+      "stage": "pre_merge"
+    },
+    {
+      "id": "tests_backend",
+      "command": "cd backend && pytest",
+      "description": "юнит-тесты бэкенда",
+      "stage": "verify"
+    },
+    {
+      "id": "deploy_smoke",
+      "command": "python scripts/deploy_smoke.py",
+      "description": "health → seed → collection → chat",
+      "stage": "verify"
+    }
+  ]
+}

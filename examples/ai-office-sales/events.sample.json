@@ -1,0 +1,305 @@
+{
+  "_comment": "Образец: проведение одной сделки с условным гейтом по сумме КП, отказом по C003 и дырой MissingCapability на шаге выставления счёта. Событие AutoApprovedByRule показывает автопрохождение условного гейта ниже порога (ADR-010).",
+  "events": [
+    {
+      "event_id": "aaaaaaaa-0000-4000-8000-000000000001",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-25T08:30:00+03:00",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "deal_onboarding",
+        "id": "deal-41"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "manager_anna",
+        "role": "sales_manager"
+      },
+      "scope": {
+        "system_id": "ai_office_sales",
+        "process_id": "deal_onboarding"
+      },
+      "payload": {
+        "deal_id": "deal-41",
+        "channel": "telegram"
+      },
+      "metadata": {
+        "correlation_id": "sess-0425-a",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "aaaaaaaa-0000-4000-8000-000000000002",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-25T08:30:04+03:00",
+      "sequence": 2,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "deal_onboarding",
+        "id": "deal-41"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "sales_agent",
+        "role": "sales_agent"
+      },
+      "scope": {
+        "system_id": "ai_office_sales",
+        "process_id": "deal_onboarding",
+        "step_id": "record_qualification",
+        "capability_id": "record_qualification"
+      },
+      "payload": {
+        "tasks": [
+          "sales"
+        ],
+        "formats": [
+          "game"
+        ],
+        "deadline": "3_months",
+        "decider": "with_partner",
+        "source_note": "Telegram chat 25.10"
+      },
+      "metadata": {
+        "correlation_id": "sess-0425-a",
+        "causation_id": "aaaaaaaa-0000-4000-8000-000000000001",
+        "schema_version": "1.0",
+        "model": {
+          "name": "claude-sonnet-5-5"
+        }
+      }
+    },
+    {
+      "event_id": "aaaaaaaa-0000-4000-8000-000000000003",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-25T08:30:06+03:00",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "entity",
+        "type": "Deal",
+        "id": "deal-41"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "sales_agent",
+        "role": "sales_agent"
+      },
+      "scope": {
+        "system_id": "ai_office_sales",
+        "process_id": "deal_onboarding",
+        "step_id": "move_to_qualification",
+        "capability_id": "move_deal_stage",
+        "entity": "Deal"
+      },
+      "payload": {
+        "from": "processing",
+        "to": "qualification",
+        "product_id": "prod-7",
+        "next_step": "созвон по брифу",
+        "due_date": "2026-10-28"
+      },
+      "metadata": {
+        "correlation_id": "sess-0425-a",
+        "causation_id": "aaaaaaaa-0000-4000-8000-000000000002",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "aaaaaaaa-0000-4000-8000-000000000004",
+      "event_type": "HumanGateRequested",
+      "occurred_at": "2026-10-25T09:10:00+03:00",
+      "sequence": 3,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "deal_onboarding",
+        "id": "deal-41"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "sales_agent",
+        "role": "sales_agent"
+      },
+      "scope": {
+        "system_id": "ai_office_sales",
+        "process_id": "deal_onboarding",
+        "step_id": "send_offer",
+        "capability_id": "send_offer",
+        "constraint_id": "C001"
+      },
+      "payload": {
+        "offer_id": "offer-9",
+        "amount_usd": 2400,
+        "approver_role": "owner",
+        "escalation": "flag_for_human task-118"
+      },
+      "metadata": {
+        "correlation_id": "sess-0425-a",
+        "causation_id": "aaaaaaaa-0000-4000-8000-000000000003",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "aaaaaaaa-0000-4000-8000-000000000005",
+      "event_type": "HumanGateResolved",
+      "occurred_at": "2026-10-25T11:02:00+03:00",
+      "sequence": 4,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "deal_onboarding",
+        "id": "deal-41"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "owner_kirill",
+        "role": "owner"
+      },
+      "scope": {
+        "system_id": "ai_office_sales",
+        "process_id": "deal_onboarding",
+        "step_id": "send_offer",
+        "capability_id": "send_offer",
+        "constraint_id": "C001"
+      },
+      "payload": {
+        "decision": "approved",
+        "comment": "сумма согласована, скидок не давать"
+      },
+      "metadata": {
+        "correlation_id": "sess-0425-a",
+        "causation_id": "aaaaaaaa-0000-4000-8000-000000000004",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "aaaaaaaa-0000-4000-8000-000000000006",
+      "event_type": "CapabilityMissing",
+      "occurred_at": "2026-10-25T11:02:05+03:00",
+      "sequence": 5,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "deal_onboarding",
+        "id": "deal-41"
+      },
+      "actor": {
+        "kind": "system"
+      },
+      "scope": {
+        "system_id": "ai_office_sales",
+        "process_id": "deal_onboarding",
+        "step_id": "send_offer",
+        "capability_id": "send_offer"
+      },
+      "payload": {
+        "reason": "not_implemented",
+        "binding_status": "planned",
+        "fallback": "человек отправляет КП из кабинета; агент ставит задачу"
+      },
+      "metadata": {
+        "correlation_id": "sess-0425-a",
+        "causation_id": "aaaaaaaa-0000-4000-8000-000000000005",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "aaaaaaaa-0000-4000-8000-000000000007",
+      "event_type": "ConstraintViolated",
+      "occurred_at": "2026-10-26T15:40:00+03:00",
+      "sequence": 2,
+      "aggregate": {
+        "kind": "entity",
+        "type": "Deal",
+        "id": "deal-41"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "sales_agent",
+        "role": "sales_agent"
+      },
+      "scope": {
+        "system_id": "ai_office_sales",
+        "process_id": "deal_loss_closure",
+        "step_id": "close_lost",
+        "capability_id": "move_deal_stage",
+        "entity": "Deal",
+        "constraint_id": "C003"
+      },
+      "payload": {
+        "attempted": "rejected",
+        "loss_reason": null,
+        "server_response": 422,
+        "action": "агент спрашивает причину у менеджера"
+      },
+      "metadata": {
+        "correlation_id": "sess-0426-b",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "aaaaaaaa-0000-4000-8000-000000000008",
+      "event_type": "PaymentRecorded",
+      "occurred_at": "2026-11-03T12:00:00+03:00",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "entity",
+        "type": "Payment",
+        "id": "pay-3"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "owner_kirill",
+        "role": "owner"
+      },
+      "scope": {
+        "system_id": "ai_office_sales",
+        "process_id": "deal_onboarding",
+        "step_id": "record_payment",
+        "capability_id": "record_payment",
+        "entity": "Payment"
+      },
+      "payload": {
+        "deal_id": "deal-41",
+        "amount": 180000,
+        "paid_at": "2026-11-03"
+      },
+      "metadata": {
+        "correlation_id": "sess-1103-c",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "aaaaaaaa-0000-4000-8000-000000000009",
+      "event_type": "AutoApprovedByRule",
+      "occurred_at": "2026-10-27T10:00:00+03:00",
+      "sequence": 6,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "deal_onboarding",
+        "id": "deal-41"
+      },
+      "actor": {
+        "kind": "system"
+      },
+      "scope": {
+        "system_id": "ai_office_sales",
+        "process_id": "deal_onboarding",
+        "step_id": "send_offer",
+        "capability_id": "send_offer",
+        "constraint_id": "C001"
+      },
+      "payload": {
+        "offer_id": "offer-10",
+        "attribute": "Offer.amount_usd",
+        "operator": ">",
+        "threshold": 1000,
+        "value": 640,
+        "unit": "USD",
+        "note": "допродажа ниже порога: гейт не запрашивался, отправка автоматическая"
+      },
+      "metadata": {
+        "correlation_id": "sess-1027-d",
+        "schema_version": "1.0"
+      }
+    }
+  ]
+}

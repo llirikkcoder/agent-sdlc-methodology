@@ -1,0 +1,474 @@
+{
+  "_comment": "Образец цепочки событий для одного письма регулятора и одного вопроса чата. Идентификаторы вымышлены; типы событий и поля payload соответствуют коду (chat_audit_events, fallback_queue, request_nodes).",
+  "events": [
+    {
+      "event_id": "11111111-1111-4111-8111-000000000001",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-25T09:00:00Z",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "prepare_regulator_response",
+        "id": "rr-7f3a"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "expert_ivanova",
+        "role": "gxp_expert"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "prepare_regulator_response"
+      },
+      "payload": {
+        "source_document": "upload-91c2",
+        "deadline": "2026-11-15"
+      },
+      "metadata": {
+        "correlation_id": "req-2026-10-25-0001",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "11111111-1111-4111-8111-000000000002",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-25T09:00:05Z",
+      "sequence": 2,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "prepare_regulator_response",
+        "id": "rr-7f3a"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "rag_agent",
+        "role": "rag_agent"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "prepare_regulator_response",
+        "step_id": "decompose_letter",
+        "capability_id": "decompose_request"
+      },
+      "payload": {
+        "upload_file_id": "upload-91c2"
+      },
+      "metadata": {
+        "correlation_id": "req-2026-10-25-0001",
+        "causation_id": "11111111-1111-4111-8111-000000000001",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "11111111-1111-4111-8111-000000000003",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-25T09:00:41Z",
+      "sequence": 3,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "prepare_regulator_response",
+        "id": "rr-7f3a"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "rag_agent",
+        "role": "rag_agent"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "prepare_regulator_response",
+        "step_id": "decompose_letter",
+        "capability_id": "decompose_request"
+      },
+      "payload": {
+        "questions": 3,
+        "leaves": 7,
+        "duration_ms": 36000
+      },
+      "metadata": {
+        "correlation_id": "req-2026-10-25-0001",
+        "causation_id": "11111111-1111-4111-8111-000000000002",
+        "schema_version": "1.0",
+        "model": {
+          "name": "deepseek-chat",
+          "prompt_version": "decompose_v2"
+        }
+      }
+    },
+    {
+      "event_id": "11111111-1111-4111-8111-000000000004",
+      "event_type": "DraftGenerated",
+      "occurred_at": "2026-10-25T09:03:10Z",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "entity",
+        "type": "RequestNode",
+        "id": "node-1a"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "rag_agent",
+        "role": "rag_agent"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "prepare_regulator_response",
+        "step_id": "generate_leaf_drafts",
+        "capability_id": "generate_leaf_draft",
+        "entity": "RequestNode"
+      },
+      "payload": {
+        "confidence": 0.58,
+        "sources": 4,
+        "judge_verdict": {
+          "requires_expert_review": true,
+          "faithfulness": 0.62,
+          "faithfulness_threshold": 0.7
+        }
+      },
+      "metadata": {
+        "correlation_id": "req-2026-10-25-0001",
+        "causation_id": "11111111-1111-4111-8111-000000000003",
+        "schema_version": "1.0",
+        "model": {
+          "name": "deepseek-chat",
+          "prompt_version": "leaf_answer_v4"
+        }
+      }
+    },
+    {
+      "event_id": "11111111-1111-4111-8111-000000000005",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-25T09:03:10Z",
+      "sequence": 2,
+      "aggregate": {
+        "kind": "entity",
+        "type": "RequestNode",
+        "id": "node-1a"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "gxp_judge",
+        "role": "gxp_judge"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "prepare_regulator_response",
+        "step_id": "judge_leaf_draft",
+        "capability_id": "judge_answer",
+        "entity": "RequestNode"
+      },
+      "payload": {
+        "from": "idle",
+        "to": "review",
+        "reason": "judge.requires_expert_review"
+      },
+      "metadata": {
+        "correlation_id": "req-2026-10-25-0001",
+        "causation_id": "11111111-1111-4111-8111-000000000004",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "11111111-1111-4111-8111-000000000006",
+      "event_type": "ConstraintViolated",
+      "occurred_at": "2026-10-25T10:12:00Z",
+      "sequence": 3,
+      "aggregate": {
+        "kind": "entity",
+        "type": "RequestNode",
+        "id": "node-1a"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "expert_ivanova",
+        "role": "gxp_expert"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "prepare_regulator_response",
+        "step_id": "review_node",
+        "capability_id": "approve_request_node",
+        "entity": "RequestNode",
+        "constraint_id": "C002"
+      },
+      "payload": {
+        "attempted": "approve",
+        "answer_author": "expert_ivanova",
+        "http_status": 403
+      },
+      "metadata": {
+        "correlation_id": "req-2026-10-25-0001",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "11111111-1111-4111-8111-000000000007",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-25T11:40:00Z",
+      "sequence": 4,
+      "aggregate": {
+        "kind": "entity",
+        "type": "RequestNode",
+        "id": "node-1a"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "expert_petrov",
+        "role": "gxp_expert"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "prepare_regulator_response",
+        "step_id": "review_node",
+        "capability_id": "approve_request_node",
+        "entity": "RequestNode"
+      },
+      "payload": {
+        "from": "review",
+        "to": "approved",
+        "approved_by": "expert_petrov",
+        "audit_event_type": "request_node_approved"
+      },
+      "metadata": {
+        "correlation_id": "req-2026-10-25-0001",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "22222222-2222-4222-8222-000000000001",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-25T12:00:00Z",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "answer_chat_question",
+        "id": "msg-5e01"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "user_sidorova",
+        "role": "reviewer"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "answer_chat_question"
+      },
+      "payload": {
+        "chat_id": "chat-77",
+        "query_length": 142,
+        "uploaded_file_id": null
+      },
+      "metadata": {
+        "correlation_id": "chat-77/msg-5e01",
+        "schema_version": "1.0",
+        "trace": {
+          "request_id": "r-889"
+        }
+      }
+    },
+    {
+      "event_id": "22222222-2222-4222-8222-000000000002",
+      "event_type": "JudgeVerdictRecorded",
+      "occurred_at": "2026-10-25T12:00:19Z",
+      "sequence": 2,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "answer_chat_question",
+        "id": "msg-5e01"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "gxp_judge",
+        "role": "gxp_judge"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "answer_chat_question",
+        "step_id": "reflect",
+        "capability_id": "judge_answer",
+        "entity": "ChatMessage"
+      },
+      "payload": {
+        "citation_accuracy": 0.65,
+        "completeness": 0.55,
+        "compliance": 0.7,
+        "average_score": 0.633,
+        "passed": false,
+        "audit_event_type": "gxp_validation_run"
+      },
+      "metadata": {
+        "correlation_id": "chat-77/msg-5e01",
+        "causation_id": "22222222-2222-4222-8222-000000000001",
+        "schema_version": "1.0",
+        "model": {
+          "name": "yandexgpt-lite",
+          "prompt_version": "gxp_judge_v3"
+        }
+      }
+    },
+    {
+      "event_id": "22222222-2222-4222-8222-000000000003",
+      "event_type": "HumanGateRequested",
+      "occurred_at": "2026-10-25T12:00:20Z",
+      "sequence": 3,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "answer_chat_question",
+        "id": "msg-5e01"
+      },
+      "actor": {
+        "kind": "system"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "answer_chat_question",
+        "step_id": "deliver_or_escalate",
+        "capability_id": "deliver_chat_answer",
+        "constraint_id": "C001"
+      },
+      "payload": {
+        "reason": "gxp_failed",
+        "approver_role": "gxp_expert",
+        "user_shown": "pending_human_message"
+      },
+      "metadata": {
+        "correlation_id": "chat-77/msg-5e01",
+        "causation_id": "22222222-2222-4222-8222-000000000002",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "22222222-2222-4222-8222-000000000004",
+      "event_type": "ReviewItemEnqueued",
+      "occurred_at": "2026-10-25T12:00:20Z",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "entity",
+        "type": "ReviewItem",
+        "id": "fb-3c9d"
+      },
+      "actor": {
+        "kind": "system"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "answer_chat_question",
+        "step_id": "enqueue_review",
+        "capability_id": "enqueue_review_item",
+        "entity": "ReviewItem"
+      },
+      "payload": {
+        "reason": "gxp_failed",
+        "confidence": 0.633,
+        "message_id": "msg-5e01",
+        "sla_deadline": "2026-10-27T12:00:20Z",
+        "audit_event_type": "fallback_enqueued"
+      },
+      "metadata": {
+        "correlation_id": "chat-77/msg-5e01",
+        "causation_id": "22222222-2222-4222-8222-000000000003",
+        "idempotency_key": "fallback:msg-5e01",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "22222222-2222-4222-8222-000000000005",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-25T14:05:00Z",
+      "sequence": 2,
+      "aggregate": {
+        "kind": "entity",
+        "type": "ReviewItem",
+        "id": "fb-3c9d"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "expert_petrov",
+        "role": "gxp_expert"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "review_queue_item",
+        "step_id": "claim",
+        "capability_id": "claim_review_item",
+        "entity": "ReviewItem"
+      },
+      "payload": {
+        "from": "pending",
+        "to": "claimed",
+        "audit_event_type": "fallback_claimed"
+      },
+      "metadata": {
+        "correlation_id": "chat-77/msg-5e01",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "22222222-2222-4222-8222-000000000007",
+      "event_type": "HumanGateClaimed",
+      "occurred_at": "2026-10-25T14:05:00Z",
+      "sequence": 4,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "answer_chat_question",
+        "id": "msg-5e01"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "expert_petrov",
+        "role": "gxp_expert"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "review_queue_item",
+        "step_id": "claim",
+        "capability_id": "claim_review_item",
+        "constraint_id": "C001"
+      },
+      "payload": {
+        "review_item_id": "fb-3c9d",
+        "audit_event_type": "fallback_claimed"
+      },
+      "metadata": {
+        "correlation_id": "chat-77/msg-5e01",
+        "causation_id": "22222222-2222-4222-8222-000000000003",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "22222222-2222-4222-8222-000000000006",
+      "event_type": "HumanGateResolved",
+      "occurred_at": "2026-10-25T14:31:00Z",
+      "sequence": 5,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "answer_chat_question",
+        "id": "msg-5e01"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "expert_petrov",
+        "role": "gxp_expert"
+      },
+      "scope": {
+        "system_id": "regulated_document_qa",
+        "process_id": "review_queue_item",
+        "step_id": "answer",
+        "capability_id": "answer_review_item",
+        "constraint_id": "C001"
+      },
+      "payload": {
+        "decision": "approved",
+        "review_item_id": "fb-3c9d",
+        "expert_answer_length": 1180,
+        "audit_event_type": "fallback_resolved"
+      },
+      "metadata": {
+        "correlation_id": "chat-77/msg-5e01",
+        "causation_id": "22222222-2222-4222-8222-000000000003",
+        "schema_version": "1.0"
+      }
+    }
+  ]
+}

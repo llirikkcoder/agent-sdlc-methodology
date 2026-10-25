@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softoscope.local/schemas/event.schema.json",
+  "title": "Agent event contract (event sourcing)",
+  "description": "Единый контракт события. Вместо номера слоя событие несёт явные ссылки (scope) на процесс, шаг, возможность, сущность или ограничение — слой выводится из них. Payload не содержит чувствительных атрибутов открытым текстом.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "aggregate",
+    "actor",
+    "scope",
+    "payload",
+    "metadata"
+  ],
+  "properties": {
+    "event_id": {
+      "$ref": "#/$defs/uuid"
+    },
+    "event_type": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9]*$",
+      "description": "Базовый каталог: ProcessInitiated, StepRequested, HumanGateRequested, HumanGateClaimed, HumanGateResolved, AutoApprovedByRule, StepCompleted, StepFailed, ConstraintViolated, EntityTransitioned, ProcessCompleted, ProcessAborted, CapabilityMissing, DriftDetected. Прочие — из domain_events слоя 2."
+    },
+    "occurred_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$",
+      "description": "ISO 8601 с зоной."
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Порядковый номер внутри агрегата (для упорядочивания и обнаружения пропусков)."
+    },
+    "aggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "process_instance",
+            "entity"
+          ],
+          "description": "process_instance — поток события привязан к экземпляру процесса; entity — к сущности слоя 2."
+        },
+        "type": {
+          "type": "string",
+          "description": "process_id или имя сущности."
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "agent",
+            "human",
+            "system"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "description": "Идентификатор участника (username, agent id). Для human — обязателен при включённой аутентификации."
+        },
+        "role": {
+          "$ref": "#/$defs/id"
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system_id"
+      ],
+      "properties": {
+        "system_id": {
+          "$ref": "#/$defs/id"
+        },
+        "process_id": {
+          "$ref": "#/$defs/id"
+        },
+        "step_id": {
+          "$ref": "#/$defs/id"
+        },
+        "capability_id": {
+          "$ref": "#/$defs/id"
+        },
+        "entity": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z0-9]*$"
+        },
+        "constraint_id": {
+          "type": "string",
+          "pattern": "^C[0-9]{3}$"
+        }
+      }
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "schema_version"
+      ],
+      "properties": {
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Идентификатор рабочей сессии/запроса, общий для всей цепочки."
+        },
+        "causation_id": {
+          "type": "string",
+          "description": "event_id события или команда, вызвавшая это событие."
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Ключ команды; второе событие с тем же ключом отбрасывается."
+        },
+        "schema_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$"
+        },
+        "model": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "prompt_version": {
+              "type": "string"
+            }
+          }
+        },
+        "trace": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "ip, user_agent, request_id и прочая техника."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    }
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softoscope.local/schemas/capabilities.schema.json",
+  "title": "Softoscope layer 4: capabilities (contracts of what the system can do)",
+  "description": "Каталог возможностей: контракт (что делает, какой эффект, кто может вызывать), без привязки к файлам и маршрутам — это слой 5.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "system_id",
+    "capabilities"
+  ],
+  "properties": {
+    "system_id": {
+      "$ref": "#/$defs/id"
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/capability"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "entity_name": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9]*$"
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_id",
+        "name",
+        "kind",
+        "effect",
+        "human_gate_required"
+      ],
+      "properties": {
+        "capability_id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 3
+        },
+        "description": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "mcp_tool",
+            "http_route",
+            "function",
+            "llm_step",
+            "cli",
+            "query",
+            "ui_action",
+            "external_call"
+          ],
+          "description": "Транспорт/природа возможности. llm_step — шаг, исполняемый моделью (генерация, классификация, оценка)."
+        },
+        "effect": {
+          "enum": [
+            "read",
+            "write_reversible",
+            "write_compensable",
+            "write_irreversible"
+          ],
+          "description": "read — не меняет мир; write_reversible — есть обратное действие внутри системы; write_compensable — обратного нет, но есть компенсация; write_irreversible — ни отката, ни компенсации (удаление, отправка наружу, деньги)."
+        },
+        "compensation": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Обязательна для write_compensable. capability_id — возможность-компенсатор, которую система вызывает сама (сага); только description — компенсацию делает человек (валидатор предупреждает).",
+          "properties": {
+            "capability_id": {
+              "$ref": "#/$defs/id"
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        },
+        "human_gate_required": {
+          "type": "boolean",
+          "description": "Должно быть true при effect=write_irreversible. Может быть true и по политике."
+        },
+        "allowed_roles": {
+          "type": "array",
+          "description": "Роли слоя 1, которым разрешён вызов. Пусто — любой участник.",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "touches_entities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entity_name"
+          }
+        },
+        "inputs": {
+          "type": "object",
+          "description": "Контракт входа: свободная JSON Schema или описание полей.",
+          "additionalProperties": true
+        },
+        "outputs": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "preconditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "idempotency": {
+          "enum": [
+            "natural",
+            "key",
+            "none"
+          ],
+          "default": "none",
+          "description": "natural — повтор безопасен сам по себе; key — безопасен при передаче ключа идемпотентности; none — повтор меняет мир дважды."
+        },
+        "external_side_effects": {
+          "type": "boolean",
+          "default": false,
+          "description": "Действие видно за границей системы (сообщение наружу, перевод средств, вызов чужого API)."
+        },
+        "constraints": {
+          "type": "array",
+          "description": "Ограничения слоя 1, которые проверяются при вызове.",
+          "items": {
+            "type": "string",
+            "pattern": "^C[0-9]{3}$"
+          }
+        },
+        "system_level": {
+          "type": "boolean",
+          "default": false,
+          "description": "Действие над самой системой (миграция, конфигурация, права, индексы), а не над доменными данными. Требует human_gate_required=true (ADR-011)."
+        }
+      }
+    }
+  }
+}

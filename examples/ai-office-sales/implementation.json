@@ -1,0 +1,31 @@
+{
+  "system_id": "ai_office_sales",
+  "repository": {
+    "name": "ai-office MCP server (инструменты mcp__ai-office__*)",
+    "ref": "список инструментов сервера на 2026-10-25",
+    "inspected_at": "2026-10-25"
+  },
+  "bindings": [
+    { "capability_id": "get_deal", "status": "implemented", "kind": "mcp_tool", "location": { "mcp": { "server": "ai-office", "tool": "get_deal" } }, "evidence": "mcp: инструмент присутствует в списке сервера, схема прочитана", "verified_at": "2026-10-25" },
+    { "capability_id": "list_deals", "status": "implemented", "kind": "mcp_tool", "location": { "mcp": { "server": "ai-office", "tool": "list_deals" } }, "evidence": "mcp: инструмент присутствует в списке сервера", "verified_at": "2026-10-25" },
+    { "capability_id": "create_deal", "status": "implemented", "kind": "mcp_tool", "location": { "mcp": { "server": "ai-office", "tool": "create_deal" } }, "evidence": "mcp: схема прочитана", "verified_at": "2026-10-25" },
+    { "capability_id": "record_qualification", "status": "implemented", "kind": "mcp_tool", "location": { "mcp": { "server": "ai-office", "tool": "record_qualification" } }, "evidence": "mcp: схема прочитана", "verified_at": "2026-10-25" },
+    { "capability_id": "move_deal_stage", "status": "implemented", "kind": "mcp_tool", "location": { "mcp": { "server": "ai-office", "tool": "update_deal_status" } }, "evidence": "mcp: схема прочитана", "verified_at": "2026-10-25", "notes": "Имя возможности отличается от имени инструмента намеренно: слой 4 описывает контракт, слой 5 — конкретный инструмент." },
+    { "capability_id": "create_offer", "status": "implemented", "kind": "mcp_tool", "location": { "mcp": { "server": "ai-office", "tool": "create_offer" } }, "evidence": "mcp: схема прочитана", "verified_at": "2026-10-25" },
+    { "capability_id": "send_offer", "status": "planned", "kind": "external_call", "evidence": "docs: в списке инструментов ai-office нет отправки КП клиенту; есть только create_offer (шаблон) и каналы email/telegram в его параметрах", "notes": "Пока отправку делает человек из кабинета. Дыра drift: not_implemented." },
+    { "capability_id": "send_invoice", "status": "planned", "kind": "mcp_tool", "location": { "mcp": { "server": "finance_mcp", "tool": "send_invoice" } }, "evidence": "docs: исходная спецификация, раздел 2.1 слой 4 (mcp_billing_send_invoice); сервера finance_mcp в сессии нет", "notes": "Намеренно оставлено как пример MissingCapabilityError: шаг deal_onboarding.send_invoice описан, реализации нет." },
+    { "capability_id": "record_payment", "status": "implemented", "kind": "mcp_tool", "location": { "mcp": { "server": "ai-office", "tool": "record_payment" } }, "evidence": "mcp: схема прочитана", "verified_at": "2026-10-25" },
+    { "capability_id": "log_deal_touch", "status": "implemented", "kind": "mcp_tool", "location": { "mcp": { "server": "ai-office", "tool": "log_deal_touch" } }, "evidence": "mcp: схема прочитана", "verified_at": "2026-10-25" },
+    { "capability_id": "create_task", "status": "implemented", "kind": "mcp_tool", "location": { "mcp": { "server": "ai-office", "tool": "create_task" } }, "evidence": "mcp: инструмент присутствует в списке сервера", "verified_at": "2026-10-25" },
+    { "capability_id": "flag_for_human", "status": "implemented", "kind": "mcp_tool", "location": { "mcp": { "server": "ai-office", "tool": "flag_for_human" } }, "evidence": "mcp: схема прочитана", "verified_at": "2026-10-25" },
+    { "capability_id": "delete_contact", "status": "implemented", "kind": "mcp_tool", "location": { "mcp": { "server": "ai-office", "tool": "delete_contact" } }, "evidence": "mcp: схема прочитана", "verified_at": "2026-10-25" }
+  ],
+  "storage": [
+    { "name": "deals", "kind": "table", "entities": ["Deal"], "status": "unconfirmed", "notes": "Хранилище скрыто за MCP; таблицы не сверялись." },
+    { "name": "agent_actions", "kind": "table", "status": "unconfirmed", "append_only": true, "notes": "Упомянута в описании flag_for_human как audit trail; структура не подтверждена." }
+  ],
+  "event_sinks": [
+    { "name": "agent_actions_audit", "storage": "agent_actions", "status": "unconfirmed", "notes": "Пишется сервером при эскалациях; покрытие остальных действий не подтверждено." }
+  ],
+  "checks": []
+}

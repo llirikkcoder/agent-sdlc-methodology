@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softoscope.local/schemas/processes.schema.json",
+  "title": "Softoscope layer 3: processes and steps",
+  "description": "Цепочки шагов: кто исполняет, через какую возможность, где нужен человек. Шаг ссылается на capability_id (слой 4) и на переход сущности (слой 2); обратимость шага наследуется от возможности.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "system_id",
+    "processes"
+  ],
+  "properties": {
+    "system_id": {
+      "$ref": "#/$defs/id"
+    },
+    "processes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/process"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "entity_name": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9]*$"
+    },
+    "process": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "process_id",
+        "name",
+        "trigger",
+        "aggregate_entity",
+        "steps"
+      ],
+      "properties": {
+        "process_id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 3
+        },
+        "description": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "active",
+            "planned",
+            "deprecated"
+          ],
+          "default": "active",
+          "description": "planned — процесс описан, но шаги ещё могут не иметь реализации; drift-проверка понижает ошибки до предупреждений."
+        },
+        "trigger": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "description"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "human_request",
+                "event",
+                "schedule",
+                "api_call",
+                "agent_decision"
+              ]
+            },
+            "description": {
+              "type": "string"
+            },
+            "event_type": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Za-z0-9]*$"
+            }
+          }
+        },
+        "aggregate_entity": {
+          "$ref": "#/$defs/entity_name",
+          "description": "Сущность, чей жизненный цикл ведёт процесс; её identity становится aggregate_id экземпляра процесса."
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "outcomes": {
+          "type": "array",
+          "description": "Возможные исходы процесса словами (для проекции и отчёта).",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step_id",
+        "name",
+        "actor"
+      ],
+      "properties": {
+        "step_id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 3
+        },
+        "description": {
+          "type": "string"
+        },
+        "actor": {
+          "enum": [
+            "agent",
+            "human",
+            "system"
+          ],
+          "description": "Кто исполняет шаг. human — шаг делает человек (через интерфейс или вне системы)."
+        },
+        "role": {
+          "$ref": "#/$defs/id",
+          "description": "Роль из слоя 1. Обязательна для actor=human (проверяется семантически)."
+        },
+        "capability_id": {
+          "$ref": "#/$defs/id",
+          "description": "Возможность из слоя 4. Обязательна для actor=agent|system; для human — если действие выполняется через возможность системы."
+        },
+        "human_gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required"
+          ],
+          "description": "Нужно ли решение человека ДО исполнения шага. Обязателен (required=true), если capability.effect=write_irreversible, или на возможность указывает ограничение с enforcement=gate.",
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "reason": {
+              "enum": [
+                "irreversible",
+                "constraint",
+                "policy",
+                "low_confidence"
+              ]
+            },
+            "approver_role": {
+              "$ref": "#/$defs/id"
+            },
+            "constraint_id": {
+              "type": "string",
+              "pattern": "^C[0-9]{3}$"
+            },
+            "note": {
+              "type": "string"
+            },
+            "condition": {
+              "type": "string",
+              "description": "Когда гейт срабатывает (словами). Пусто — всегда. Для effect=write_irreversible условие запрещено: гейт безусловный."
+            }
+          }
+        },
+        "transition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "entity",
+            "to"
+          ],
+          "description": "Какой переход состояния сущности совершает шаг (должен существовать в слое 2).",
+          "properties": {
+            "entity": {
+              "$ref": "#/$defs/entity_name"
+            },
+            "from": {
+              "$ref": "#/$defs/id"
+            },
+            "to": {
+              "$ref": "#/$defs/id"
+            }
+          }
+        },
+        "condition": {
+          "type": "string",
+          "description": "Условие исполнения шага словами (ветвление)."
+        },
+        "next": {
+          "type": "array",
+          "description": "Следующие шаги. Пусто — следующий по порядку; несколько — ветвление по condition.",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "on_failure": {
+          "enum": [
+            "abort",
+            "retry",
+            "escalate",
+            "skip"
+          ],
+          "default": "abort"
+        },
+        "emits": {
+          "type": "array",
+          "description": "Дополнительные доменные события, которые шаг порождает (базовые StepRequested/StepCompleted подразумеваются).",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Za-z0-9]*$"
+          }
+        }
+      }
+    }
+  }
+}

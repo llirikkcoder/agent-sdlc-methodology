@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://softoscope.local/schemas/purpose.schema.json",
+  "title": "Softoscope layer 1: purpose, roles, hard constraints",
+  "description": "Назначение системы, роли участников и жёсткие ограничения. Ядро не знает предметной области: все имена сущностей, ролей и правил приходят как данные.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "system_id",
+    "spec_version",
+    "purpose",
+    "roles",
+    "hard_constraints"
+  ],
+  "properties": {
+    "system_id": {
+      "$ref": "#/$defs/id"
+    },
+    "spec_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Версия описания (semver). Меняется при любой правке слоёв."
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Одно-два предложения: зачем система существует."
+    },
+    "goals": {
+      "type": "array",
+      "description": "Измеримые цели. Необязательно, но помогает гейту «Verify».",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "statement"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^G[0-9]{3}$"
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 5
+          },
+          "metric": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "non_goals": {
+      "type": "array",
+      "description": "Чего система намеренно не делает. Защищает от расползания.",
+      "items": {
+        "type": "string",
+        "minLength": 3
+      }
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Участники: люди, агенты, системные процессы. На роли ссылаются шаги процессов, гейты и события.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/id"
+          },
+          "kind": {
+            "enum": [
+              "human",
+              "agent",
+              "system"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 3
+          },
+          "may_approve": {
+            "type": "boolean",
+            "default": false,
+            "description": "Может ли роль разрешать человеческие гейты."
+          }
+        }
+      }
+    },
+    "hard_constraints": {
+      "type": "array",
+      "description": "Инварианты, которые агент не имеет права нарушать. Каждый должен быть проверяем.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "rule",
+          "severity",
+          "enforcement"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^C[0-9]{3}$"
+          },
+          "rule": {
+            "type": "string",
+            "minLength": 10
+          },
+          "severity": {
+            "enum": [
+              "critical",
+              "high",
+              "medium"
+            ]
+          },
+          "enforcement": {
+            "enum": [
+              "pre_check",
+              "gate",
+              "post_check",
+              "audit_only"
+            ],
+            "description": "pre_check — проверяется до вызова capability; gate — требует решения человека; post_check — проверяется по проекции после шага; audit_only — только фиксируется. Для gate с threshold гейт срабатывает только при выполнении условия порога."
+          },
+          "applies_to": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "К чему относится правило. Пусто — ко всей системе.",
+            "properties": {
+              "entities": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/entity_name"
+                }
+              },
+              "capabilities": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              },
+              "processes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              }
+            }
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "description": "Откуда правило: документ, тикет, закон, решение."
+          },
+          "status": {
+            "enum": [
+              "confirmed",
+              "unconfirmed"
+            ],
+            "default": "confirmed",
+            "description": "unconfirmed — правило записано со слов или из документа, но не подтверждено кодом/владельцем."
+          },
+          "threshold": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "attribute",
+              "operator",
+              "value"
+            ],
+            "description": "Машиночитаемый порог для ограничений с enforcement=gate. Только при его наличии шаг на необратимой возможности может иметь условный гейт (ADR-010): выше порога — человек, ниже — автоматически с записью gate_skipped в StepRequested.",
+            "properties": {
+              "attribute": {
+                "type": "string",
+                "description": "Entity.attribute, по которому сравнивают (из слоя 2)."
+              },
+              "operator": {
+                "enum": [
+                  ">",
+                  ">=",
+                  "<",
+                  "<=",
+                  "==",
+                  "!="
+                ]
+              },
+              "value": {
+                "type": [
+                  "number",
+                  "string"
+                ]
+              },
+              "unit": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "entity_name": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z0-9]*$"
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "system_id": "regulated_document_qa",
+  "spec_version": "0.1.0",
+  "purpose": "Помогать регуляторной команде фармкомпании готовить ответы на запросы регулятора по досье CTD и нормативным актам ЕАЭС: находить подтверждённые источники, собирать черновики, проводить их через GxP-проверку и согласование человеком, вести квалифицируемый журнал аудита.",
+  "goals": [
+    { "id": "G001", "statement": "Каждый ответ регулятору собран из согласованных экспертом узлов; ни один узел не согласован автором своего текста.", "metric": "доля узлов approved с approved_by != answer_author = 100%" },
+    { "id": "G002", "statement": "Ответ чата, не прошедший GxP-гейт, никогда не доставляется пользователю как готовый.", "metric": "число сообщений с gxp_status=failed и доставленным текстом ответа = 0" },
+    { "id": "G003", "statement": "Качество поиска измеряется детерминированными метриками на эталоне, а не вердиктом LLM-судьи.", "metric": "recall@5 на перепривязанном эталоне; целевое значение — не подтверждено (TBD)" }
+  ],
+  "non_goals": [
+    "Система не отправляет ответ регулятору сама: экспорт даёт файл, отправку делает человек вне системы.",
+    "Система не принимает решений о регистрации препарата и не заменяет GxP-эксперта.",
+    "Ядро методологии не знает об этом домене: всё здесь — данные примера."
+  ],
+  "roles": [
+    { "id": "reviewer", "kind": "human", "description": "Пользователь: задаёт вопросы в чате, загружает документы. Таблица users.role='reviewer'." },
+    { "id": "gxp_expert", "kind": "human", "description": "GxP-эксперт: ведёт очередь проверки, согласует узлы ответа, удаляет/переиндексирует документы корпуса. users.role='gxp_expert'.", "may_approve": true },
+    { "id": "admin", "kind": "human", "description": "Администратор: всё, что эксперт, плюс управление пользователями, ручной запуск индексации. users.role='admin'.", "may_approve": true },
+    { "id": "inspector", "kind": "human", "description": "Аудитор только на чтение: журнал аудита, эталон, отчёты. users.role='inspector' (AS-1861)." },
+    { "id": "rag_agent", "kind": "agent", "description": "Агент LangGraph (agent/graph.py): анализ запроса, поиск, генерация ответа." },
+    { "id": "gxp_judge", "kind": "agent", "description": "LLM-судья GxP (validation/gxp_validator.py + agent/gxp_gate.py): оценивает citation_accuracy, completeness, compliance; решение гейта считается детерминированно." },
+    { "id": "ingest_worker", "kind": "system", "description": "Фоновый проход индексации (tasks/ingest_task.py, scripts ingest_one_pass): парсинг, чанкинг, эмбеддинг, запись." },
+    { "id": "scheduler", "kind": "system", "description": "Планировщик (cron), запускающий проходы индексации; пишет triggered_by='cron' в ingest_events." }
+  ],
+  "hard_constraints": [
+    {
+      "id": "C001",
+      "rule": "Ответ, не прошедший GxP-гейт (среднее трёх оценок < 0.7 или любая оценка < 0.6), не показывается пользователю как готовый: вместо текста — уведомление о передаче эксперту, сам ответ — в очередь проверки.",
+      "severity": "critical",
+      "enforcement": "gate",
+      "applies_to": { "capabilities": ["deliver_chat_answer"], "processes": ["answer_chat_question"] },
+      "source": "agent/gxp_gate.py (SPEC-G1, SPEC-P99), validation/gate.py PENDING_HUMAN_MESSAGE",
+      "status": "confirmed"
+    },
+    {
+      "id": "C002",
+      "rule": "Контроль четырёх глаз: пользователь, записавший expert_answer узла, не может сам согласовать этот узел; возврат узла с проверки не делают автор ответа и передавший на проверку.",
+      "severity": "critical",
+      "enforcement": "pre_check",
+      "applies_to": { "capabilities": ["approve_request_node", "rework_request_node"], "entities": ["RequestNode"] },
+      "source": "api/routers/prepare.py node_answer / node_rework (SPEC-R1, SPEC-R5)",
+      "status": "confirmed"
+    },
+    {
+      "id": "C003",
+      "rule": "Журнал аудита append-only: записи chat_audit_events не обновляются и не удаляются, не имеют FK на чаты и переживают удаление чата.",
+      "severity": "critical",
+      "enforcement": "post_check",
+      "applies_to": {},
+      "source": "db/models.py ChatAuditEvent (AS-1624)",
+      "status": "confirmed"
+    },
+    {
+      "id": "C004",
+      "rule": "Клинические приложения с данными пациентского уровня (§16) не индексируются и не хранятся в корпусе.",
+      "severity": "high",
+      "enforcement": "pre_check",
+      "applies_to": { "capabilities": ["index_document"], "entities": ["CorpusDocument"] },
+      "source": "ingest/pii_exclusion.py is_clinical_appendix, ingest/stages.py PII_SKIP_REASON (SPEC-P1)",
+      "status": "confirmed"
+    },
+    {
+      "id": "C005",
+      "rule": "Удаление документа из корпуса доступно только ролям gxp_expert и admin и всегда оставляет запись аудита document_deleted.",
+      "severity": "high",
+      "enforcement": "gate",
+      "applies_to": { "capabilities": ["delete_corpus_document"] },
+      "source": "api/routers/assistant.py delete_source_from_collection (require_expert, SPEC-A5)",
+      "status": "confirmed"
+    },
+    {
+      "id": "C006",
+      "rule": "GxP-действия (декомпозиция письма, согласование и экспорт ответа, работа с очередью проверки) доступны только ролям gxp_expert и admin.",
+      "severity": "high",
+      "enforcement": "pre_check",
+      "applies_to": { "processes": ["prepare_regulator_response", "review_queue_item"] },
+      "source": "api/routers/prepare.py и fallback_queue.py: require_expert на уровне роутера (AS-1846, AS-1802)",
+      "status": "confirmed"
+    },
+    {
+      "id": "C007",
+      "rule": "Содержимое досье не покидает контур организации (не отправляется внешним LLM без обезличивания).",
+      "severity": "critical",
+      "enforcement": "audit_only",
+      "applies_to": { "capabilities": ["generate_answer", "generate_leaf_draft", "judge_answer"] },
+      "source": "docs/architecture/system-spec.md D-LLM-HOSTING — требование обсуждается; в коде генерация идёт через внешнего провайдера, ANONYMIZE_FOR_LLM опционален",
+      "status": "unconfirmed"
+    }
+  ]
+}

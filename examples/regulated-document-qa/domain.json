@@ -1,0 +1,921 @@
+{
+  "system_id": "regulated_document_qa",
+  "entities": {
+    "RegulatorRequest": {
+      "description": "Запрос (письмо) регулятора: корень дерева декомпозиции. Таблица request_trees.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "description": "Человекочитаемый код RR-YYYY-NNNNNN"
+        },
+        {
+          "name": "drug",
+          "type": "string"
+        },
+        {
+          "name": "market",
+          "type": "string"
+        },
+        {
+          "name": "procedure_type",
+          "type": "string"
+        },
+        {
+          "name": "bu",
+          "type": "string",
+          "description": "Бизнес-юнит"
+        },
+        {
+          "name": "request_type",
+          "type": "string"
+        },
+        {
+          "name": "drug_class",
+          "type": "string"
+        },
+        {
+          "name": "source_document",
+          "type": "string",
+          "description": "upload_file_id письма"
+        },
+        {
+          "name": "deadline",
+          "type": "datetime"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "draft",
+            "in_progress",
+            "ready"
+          ]
+        },
+        {
+          "name": "answer_frames",
+          "type": "json",
+          "description": "Выбранные рамки ответа (node_id)"
+        }
+      ],
+      "states": [
+        "draft",
+        "in_progress",
+        "ready"
+      ],
+      "initial_state": "draft",
+      "terminal_states": [],
+      "derived_state": true,
+      "transitions": [
+        {
+          "from": "draft",
+          "to": "in_progress",
+          "trigger": "первый узел получил черновик/проверку",
+          "actor_kind": "system",
+          "reversible": false
+        },
+        {
+          "from": "in_progress",
+          "to": "ready",
+          "trigger": "все терминальные узлы approved (assemble.ready)",
+          "actor_kind": "system",
+          "reversible": true
+        },
+        {
+          "from": "ready",
+          "to": "in_progress",
+          "trigger": "узел возвращён на доработку",
+          "actor_kind": "human",
+          "reversible": true
+        }
+      ],
+      "relations": [
+        {
+          "name": "questions",
+          "target": "RequestQuestion",
+          "cardinality": "many"
+        }
+      ],
+      "invariants": [
+        "status — производная от узлов (_derive_request_status), не правится вручную"
+      ]
+    },
+    "RequestQuestion": {
+      "description": "Пронумерованный вопрос письма (уровень 1 дерева). Таблица request_questions.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "request_id",
+          "type": "ref",
+          "ref": "RegulatorRequest",
+          "required": true
+        },
+        {
+          "name": "ordinal",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "name": "text",
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "container",
+            "draft",
+            "review",
+            "approved"
+          ]
+        },
+        {
+          "name": "draft_answer",
+          "type": "string"
+        },
+        {
+          "name": "confidence",
+          "type": "number"
+        },
+        {
+          "name": "expert_answer",
+          "type": "string"
+        }
+      ],
+      "states": [
+        "container",
+        "draft",
+        "review",
+        "approved"
+      ],
+      "initial_state": "container",
+      "transitions": [
+        {
+          "from": "container",
+          "to": "draft",
+          "trigger": "generate-drafts по рамке-вопросу",
+          "actor_kind": "agent",
+          "reversible": true
+        },
+        {
+          "from": "container",
+          "to": "review",
+          "trigger": "generate-drafts с низкой уверенностью",
+          "actor_kind": "agent",
+          "reversible": true
+        },
+        {
+          "from": "draft",
+          "to": "review",
+          "trigger": "to_review",
+          "actor_kind": "human",
+          "reversible": false
+        },
+        {
+          "from": "review",
+          "to": "approved",
+          "trigger": "approve",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "approved",
+          "to": "review",
+          "trigger": "reject",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "review",
+          "to": "container",
+          "trigger": "reject без черновика",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "draft",
+          "to": "container",
+          "trigger": "rework без черновика",
+          "actor_kind": "human",
+          "reversible": true
+        }
+      ],
+      "relations": [
+        {
+          "name": "sub_questions",
+          "target": "RequestNode",
+          "cardinality": "many"
+        }
+      ]
+    },
+    "RequestNode": {
+      "description": "Подвопрос (лист или промежуточный узел, уровни 2–4): единица RAG, черновика и согласования. Таблица request_nodes.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "question_id",
+          "type": "ref",
+          "ref": "RequestQuestion",
+          "required": true
+        },
+        {
+          "name": "parent_sub_question_id",
+          "type": "ref",
+          "ref": "RequestNode"
+        },
+        {
+          "name": "level",
+          "type": "integer"
+        },
+        {
+          "name": "sub_ordinal",
+          "type": "string"
+        },
+        {
+          "name": "text",
+          "type": "string"
+        },
+        {
+          "name": "qtype",
+          "type": "string"
+        },
+        {
+          "name": "ctd_sections",
+          "type": "list"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "idle",
+            "draft",
+            "review",
+            "approved"
+          ]
+        },
+        {
+          "name": "draft_answer",
+          "type": "string"
+        },
+        {
+          "name": "confidence",
+          "type": "number"
+        },
+        {
+          "name": "expert_answer",
+          "type": "string"
+        },
+        {
+          "name": "assignee",
+          "type": "string"
+        },
+        {
+          "name": "answer_author",
+          "type": "string",
+          "description": "Кто последним правил expert_answer (четыре глаза)"
+        },
+        {
+          "name": "submitted_by",
+          "type": "string"
+        },
+        {
+          "name": "approved_by",
+          "type": "string"
+        },
+        {
+          "name": "judge_verdict",
+          "type": "json"
+        },
+        {
+          "name": "sources",
+          "type": "json"
+        }
+      ],
+      "states": [
+        "idle",
+        "draft",
+        "review",
+        "approved"
+      ],
+      "initial_state": "idle",
+      "transitions": [
+        {
+          "from": "idle",
+          "to": "draft",
+          "trigger": "generate_leaf_draft: confidence ≥ порога и судья не требует эксперта",
+          "actor_kind": "agent",
+          "reversible": true
+        },
+        {
+          "from": "idle",
+          "to": "review",
+          "trigger": "generate_leaf_draft: confidence < порога или judge.requires_expert_review",
+          "actor_kind": "agent",
+          "reversible": true
+        },
+        {
+          "from": "draft",
+          "to": "review",
+          "trigger": "node_answer to_review=true",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "review",
+          "to": "approved",
+          "trigger": "node_answer approve=true",
+          "actor_kind": "human",
+          "reversible": true,
+          "guard": "C002"
+        },
+        {
+          "from": "draft",
+          "to": "approved",
+          "trigger": "node_answer approve=true из черновика",
+          "actor_kind": "human",
+          "reversible": true,
+          "guard": "C002"
+        },
+        {
+          "from": "approved",
+          "to": "review",
+          "trigger": "node_reject",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "review",
+          "to": "idle",
+          "trigger": "node_reject без черновика",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "review",
+          "to": "draft",
+          "trigger": "node_rework (проверяющий, не автор)",
+          "actor_kind": "human",
+          "reversible": true,
+          "guard": "C002"
+        },
+        {
+          "from": "approved",
+          "to": "draft",
+          "trigger": "node_rework «вернуться к черновику»",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "draft",
+          "to": "idle",
+          "trigger": "node_rework без текста черновика",
+          "actor_kind": "human",
+          "reversible": true
+        }
+      ],
+      "relations": [
+        {
+          "name": "children",
+          "target": "RequestNode",
+          "cardinality": "many"
+        }
+      ],
+      "invariants": [
+        "approved_by != answer_author (C002)",
+        "финальный текст узла = expert_answer or draft_answer"
+      ]
+    },
+    "ReviewItem": {
+      "description": "Элемент очереди проверки человеком: ответ чата, провалившийся на GxP-гейте, низкоуверенный или отсутствующий. Таблица fallback_queue.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "chat_id",
+          "type": "ref",
+          "ref": "ChatSession"
+        },
+        {
+          "name": "message_id",
+          "type": "string",
+          "description": "UNIQUE: ключ идемпотентности enqueue"
+        },
+        {
+          "name": "question_message_id",
+          "type": "string"
+        },
+        {
+          "name": "query",
+          "type": "string"
+        },
+        {
+          "name": "drug",
+          "type": "string"
+        },
+        {
+          "name": "reason",
+          "type": "string",
+          "enum": [
+            "gxp_failed",
+            "low_confidence",
+            "no_answer"
+          ]
+        },
+        {
+          "name": "confidence",
+          "type": "number"
+        },
+        {
+          "name": "draft_answer",
+          "type": "string"
+        },
+        {
+          "name": "context",
+          "type": "json"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "pending",
+            "claimed",
+            "resolved",
+            "rejected"
+          ]
+        },
+        {
+          "name": "reviewer",
+          "type": "string"
+        },
+        {
+          "name": "expert_answer",
+          "type": "string"
+        },
+        {
+          "name": "expert_notes",
+          "type": "string"
+        },
+        {
+          "name": "sla_deadline",
+          "type": "datetime"
+        }
+      ],
+      "states": [
+        "pending",
+        "claimed",
+        "resolved",
+        "rejected"
+      ],
+      "initial_state": "pending",
+      "terminal_states": [],
+      "transitions": [
+        {
+          "from": "pending",
+          "to": "claimed",
+          "trigger": "claim или save черновика",
+          "actor_kind": "human",
+          "reversible": false
+        },
+        {
+          "from": "claimed",
+          "to": "resolved",
+          "trigger": "answer",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "claimed",
+          "to": "rejected",
+          "trigger": "reject",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "resolved",
+          "to": "claimed",
+          "trigger": "reopen",
+          "actor_kind": "human",
+          "reversible": true
+        },
+        {
+          "from": "rejected",
+          "to": "claimed",
+          "trigger": "reopen",
+          "actor_kind": "human",
+          "reversible": true
+        }
+      ],
+      "invariants": [
+        "один элемент очереди на одно assistant-сообщение (UNIQUE message_id)",
+        "claimed-элемент правит только его reviewer"
+      ]
+    },
+    "ChatSession": {
+      "description": "Чат пользователя. Таблица chats.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "user_id",
+          "type": "string"
+        },
+        {
+          "name": "uploaded_file_id",
+          "type": "string"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        }
+      ],
+      "relations": [
+        {
+          "name": "messages",
+          "target": "ChatMessage",
+          "cardinality": "many"
+        }
+      ]
+    },
+    "ChatMessage": {
+      "description": "Сообщение чата (вопрос пользователя или ответ ассистента). Таблица chat_messages.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "chat_id",
+          "type": "ref",
+          "ref": "ChatSession",
+          "required": true
+        },
+        {
+          "name": "role",
+          "type": "string",
+          "enum": [
+            "user",
+            "assistant"
+          ]
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "sensitive": true,
+          "description": "Может содержать персональные данные из вопроса; в события не копируется"
+        },
+        {
+          "name": "extra",
+          "type": "json",
+          "description": "steps, sources, metrics, gxp_status"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        }
+      ]
+    },
+    "CorpusDocument": {
+      "description": "Документ корпуса (набор чанков с одним source). Хранится в pgvector-таблице chunks/chunks_768.",
+      "identity": "source",
+      "attributes": [
+        {
+          "name": "source",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "collection",
+          "type": "string"
+        },
+        {
+          "name": "drug",
+          "type": "string"
+        },
+        {
+          "name": "doc_type",
+          "type": "string"
+        },
+        {
+          "name": "display_name",
+          "type": "string"
+        },
+        {
+          "name": "section_path",
+          "type": "string"
+        },
+        {
+          "name": "chunks_count",
+          "type": "integer"
+        }
+      ],
+      "states": [
+        "uploaded",
+        "indexed",
+        "failed",
+        "deleted"
+      ],
+      "initial_state": "uploaded",
+      "terminal_states": [
+        "deleted"
+      ],
+      "transitions": [
+        {
+          "from": "uploaded",
+          "to": "indexed",
+          "trigger": "ingest pass / upload",
+          "actor_kind": "system",
+          "reversible": false
+        },
+        {
+          "from": "uploaded",
+          "to": "failed",
+          "trigger": "ошибка парсинга/эмбеддинга",
+          "actor_kind": "system",
+          "reversible": false
+        },
+        {
+          "from": "failed",
+          "to": "indexed",
+          "trigger": "reindex",
+          "actor_kind": "human",
+          "reversible": false
+        },
+        {
+          "from": "indexed",
+          "to": "deleted",
+          "trigger": "DELETE /collection/sources/{source}",
+          "actor_kind": "human",
+          "reversible": false,
+          "guard": "C005"
+        }
+      ]
+    },
+    "IngestRun": {
+      "description": "Проход индексации (append-only журнал). Таблица ingest_events.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "name": "started_at",
+          "type": "datetime"
+        },
+        {
+          "name": "finished_at",
+          "type": "datetime"
+        },
+        {
+          "name": "files_total",
+          "type": "integer"
+        },
+        {
+          "name": "files_processed",
+          "type": "integer"
+        },
+        {
+          "name": "files_failed",
+          "type": "integer"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "running",
+            "ok",
+            "failed",
+            "partial",
+            "skipped",
+            "timeout",
+            "error",
+            "aborted"
+          ]
+        },
+        {
+          "name": "triggered_by",
+          "type": "string",
+          "enum": [
+            "cron",
+            "manual",
+            "api"
+          ]
+        },
+        {
+          "name": "stages",
+          "type": "json"
+        }
+      ],
+      "states": [
+        "running",
+        "ok",
+        "failed",
+        "partial",
+        "skipped",
+        "timeout",
+        "error",
+        "aborted"
+      ],
+      "initial_state": "running",
+      "terminal_states": [
+        "ok",
+        "failed",
+        "partial",
+        "skipped",
+        "timeout",
+        "error",
+        "aborted"
+      ],
+      "transitions": [
+        {
+          "from": "running",
+          "to": "ok",
+          "actor_kind": "system",
+          "reversible": false
+        },
+        {
+          "from": "running",
+          "to": "partial",
+          "actor_kind": "system",
+          "reversible": false
+        },
+        {
+          "from": "running",
+          "to": "failed",
+          "actor_kind": "system",
+          "reversible": false
+        },
+        {
+          "from": "running",
+          "to": "skipped",
+          "trigger": "другой проход уже шёл",
+          "actor_kind": "system",
+          "reversible": false
+        },
+        {
+          "from": "running",
+          "to": "timeout",
+          "actor_kind": "system",
+          "reversible": false
+        },
+        {
+          "from": "running",
+          "to": "error",
+          "actor_kind": "system",
+          "reversible": false
+        },
+        {
+          "from": "running",
+          "to": "aborted",
+          "trigger": "SIGTERM или мёртвый проход закрыт следующим (SPEC-R51)",
+          "actor_kind": "system",
+          "reversible": false
+        }
+      ]
+    },
+    "AnswerRecord": {
+      "description": "Институциональная память: пара вопрос–ответ регулятору (Health Authority Q&R Library). Таблица answer_records.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "name": "request_id",
+          "type": "string"
+        },
+        {
+          "name": "question",
+          "type": "string"
+        },
+        {
+          "name": "response",
+          "type": "string"
+        },
+        {
+          "name": "origin",
+          "type": "string"
+        },
+        {
+          "name": "needs_review",
+          "type": "boolean"
+        },
+        {
+          "name": "author",
+          "type": "string"
+        },
+        {
+          "name": "drug",
+          "type": "string"
+        },
+        {
+          "name": "health_authority",
+          "type": "string"
+        },
+        {
+          "name": "market",
+          "type": "string"
+        }
+      ]
+    },
+    "User": {
+      "description": "Учётная запись с ролью. Таблица users (пароль хранится как bcrypt-хэш, в модель не включён).",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "display_name",
+          "type": "string",
+          "sensitive": true
+        },
+        {
+          "name": "role",
+          "type": "string",
+          "enum": [
+            "reviewer",
+            "gxp_expert",
+            "admin",
+            "inspector"
+          ]
+        },
+        {
+          "name": "is_active",
+          "type": "boolean"
+        },
+        {
+          "name": "must_change_password",
+          "type": "boolean"
+        }
+      ]
+    }
+  },
+  "domain_events": [
+    {
+      "name": "DraftGenerated",
+      "entity": "RequestNode",
+      "description": "RAG собрал черновик узла: confidence, число источников, вердикт судьи."
+    },
+    {
+      "name": "JudgeVerdictRecorded",
+      "entity": "ChatMessage",
+      "description": "GxP-судья оценил ответ (в коде: chat_audit_events.event_type=gxp_validation_run)."
+    },
+    {
+      "name": "ReviewItemEnqueued",
+      "entity": "ReviewItem",
+      "description": "Ответ поставлен в очередь проверки (в коде: fallback_enqueued)."
+    },
+    {
+      "name": "AnswerExported",
+      "entity": "RegulatorRequest",
+      "description": "Собранный ответ выгружен файлом для отправки регулятору."
+    },
+    {
+      "name": "DocumentDeleted",
+      "entity": "CorpusDocument",
+      "description": "Документ удалён из корпуса (в коде: document_deleted)."
+    }
+  ]
+}
