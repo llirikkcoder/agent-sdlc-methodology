@@ -75,7 +75,7 @@
           "id": { "$ref": "#/$defs/id" },
           "command": { "type": "string" },
           "description": { "type": "string" },
-          "stage": { "enum": ["static_guard", "verify", "pre_merge"] }
+          "stage": { "enum": ["on_edit", "static_guard", "verify", "pre_merge"], "description": "on_edit — хук в сессии агента при правке или команде; static_guard — проверка модели до исполнения; verify — тесты и smoke после реализации; pre_merge — гейты слияния" }
         }
       }
     }
