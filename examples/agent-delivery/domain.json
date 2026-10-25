@@ -1,0 +1,360 @@
+{
+  "system_id": "agent_delivery",
+  "entities": {
+    "Topic": {
+      "description": "Тема работы, привязанная к якорю в трекере (эпик или задача). Ветка, дерево и вкладка производны от неё.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": "id якоря в трекере; содержится в имени ветки"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "anchor_kind",
+          "type": "string",
+          "enum": [
+            "epic",
+            "task"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "queued",
+            "working",
+            "waiting",
+            "stuck",
+            "done",
+            "not_done",
+            "closed"
+          ]
+        },
+        {
+          "name": "merge_exception",
+          "type": "string",
+          "enum": [
+            "none",
+            "migration",
+            "release",
+            "model_core",
+            "pair"
+          ],
+          "description": "почему воркер не сливает сам (C005, C009)"
+        },
+        {
+          "name": "merge_forbidden",
+          "type": "boolean",
+          "description": "постановка прямо сказала «не сливать»"
+        },
+        {
+          "name": "summary",
+          "type": "string",
+          "description": "итог в якоре: что сделано, номера слитых запросов, вопросы человеку"
+        }
+      ],
+      "states": [
+        "queued",
+        "working",
+        "waiting",
+        "stuck",
+        "done",
+        "not_done",
+        "closed"
+      ],
+      "initial_state": "queued",
+      "terminal_states": [
+        "closed"
+      ],
+      "transitions": [
+        {
+          "from": "queued",
+          "to": "working",
+          "actor_kind": "system",
+          "guard": "воркеров меньше ANCHOR_MAX (C006)"
+        },
+        {
+          "from": "working",
+          "to": "waiting",
+          "actor_kind": "agent",
+          "guard": "причина внешняя: фоновая сборка, лимит, ответ человека"
+        },
+        {
+          "from": "waiting",
+          "to": "working",
+          "actor_kind": "agent"
+        },
+        {
+          "from": "working",
+          "to": "stuck",
+          "actor_kind": "agent",
+          "guard": "воркер сам сказал stuck"
+        },
+        {
+          "from": "stuck",
+          "to": "working",
+          "actor_kind": "agent"
+        },
+        {
+          "from": "working",
+          "to": "done",
+          "actor_kind": "agent",
+          "guard": "маркер сдачи записан, запрос на слияние слит или сдан без слияния по C009"
+        },
+        {
+          "from": "working",
+          "to": "not_done",
+          "actor_kind": "agent",
+          "guard": "worker-done --not-done: что мешает"
+        },
+        {
+          "from": "not_done",
+          "to": "working",
+          "actor_kind": "human",
+          "guard": "человек снял препятствие или переставил тему"
+        },
+        {
+          "from": "done",
+          "to": "working",
+          "actor_kind": "human",
+          "guard": "возврат на доработку"
+        },
+        {
+          "from": "done",
+          "to": "closed",
+          "actor_kind": "agent",
+          "guard": "все запросы темы слиты; дерево убрано"
+        }
+      ],
+      "relations": [
+        {
+          "name": "worktrees",
+          "target": "Worktree",
+          "cardinality": "many"
+        },
+        {
+          "name": "pull_requests",
+          "target": "PullRequest",
+          "cardinality": "many"
+        }
+      ],
+      "invariants": [
+        "активная тема (working/waiting/stuck) имеет ровно одно живое дерево на репозиторий и одного воркера (C001)"
+      ]
+    },
+    "Worktree": {
+      "description": "Отдельное git-дерево и ветка темы в одном репозитории.",
+      "identity": "path",
+      "attributes": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "branch",
+          "type": "string",
+          "required": true,
+          "description": "содержит id якоря"
+        },
+        {
+          "name": "base",
+          "type": "string",
+          "description": "ветка, от которой заведено дерево; по умолчанию main"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "active",
+            "removed"
+          ]
+        }
+      ],
+      "states": [
+        "active",
+        "removed"
+      ],
+      "initial_state": "active",
+      "terminal_states": [
+        "removed"
+      ],
+      "transitions": [
+        {
+          "from": "active",
+          "to": "removed",
+          "actor_kind": "agent",
+          "guard": "всё закоммичено; ветка переименована в merged/…"
+        }
+      ]
+    },
+    "PullRequest": {
+      "description": "Запрос на слияние ветки темы в main.",
+      "identity": "number",
+      "attributes": [
+        {
+          "name": "number",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "head_commit",
+          "type": "string"
+        },
+        {
+          "name": "verified_commit",
+          "type": "string",
+          "description": "коммит, на котором прошли гейты; сливается только он (C002)"
+        },
+        {
+          "name": "has_migration",
+          "type": "boolean"
+        },
+        {
+          "name": "touches_model_core",
+          "type": "boolean",
+          "description": "меняет effect, human_gate_required, system_level или ограничения слоя 1"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "open",
+            "merged",
+            "closed"
+          ]
+        }
+      ],
+      "states": [
+        "open",
+        "merged",
+        "closed"
+      ],
+      "initial_state": "open",
+      "terminal_states": [
+        "merged",
+        "closed"
+      ],
+      "transitions": [
+        {
+          "from": "open",
+          "to": "merged",
+          "actor_kind": "agent",
+          "guard": "гейты зелёные на verified_commit поверх свежего main"
+        },
+        {
+          "from": "open",
+          "to": "closed",
+          "actor_kind": "human"
+        }
+      ],
+      "relations": [
+        {
+          "name": "gate_runs",
+          "target": "GateRun",
+          "cardinality": "many"
+        }
+      ]
+    },
+    "GateRun": {
+      "description": "Прогон гейтов репозитория для запроса на слияние (или пары) поверх свежего main.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "pull_request",
+          "type": "ref",
+          "ref": "PullRequest",
+          "required": true
+        },
+        {
+          "name": "base_commit",
+          "type": "string"
+        },
+        {
+          "name": "verified_commit",
+          "type": "string"
+        },
+        {
+          "name": "failures",
+          "type": "list",
+          "description": "строки падений; допустимы только известные (C004)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "enum": [
+            "running",
+            "passed",
+            "failed"
+          ]
+        }
+      ],
+      "states": [
+        "running",
+        "passed",
+        "failed"
+      ],
+      "initial_state": "running",
+      "terminal_states": [
+        "passed",
+        "failed"
+      ],
+      "transitions": [
+        {
+          "from": "running",
+          "to": "passed",
+          "actor_kind": "system"
+        },
+        {
+          "from": "running",
+          "to": "failed",
+          "actor_kind": "system"
+        }
+      ]
+    }
+  },
+  "domain_events": [
+    {
+      "name": "WorkerStarted",
+      "entity": "Topic",
+      "description": "Воркер запущен в дереве темы."
+    },
+    {
+      "name": "WorkerReportedDone",
+      "entity": "Topic",
+      "description": "Воркер записал маркер сдачи (сделано или не сделано)."
+    },
+    {
+      "name": "PullRequestMerged",
+      "entity": "PullRequest",
+      "description": "Запрос на слияние слит в main ровно проверенным коммитом."
+    },
+    {
+      "name": "GatesFailed",
+      "entity": "GateRun",
+      "description": "Гейты красные или упали незнакомым падением."
+    }
+  ]
+}

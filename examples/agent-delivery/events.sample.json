@@ -1,0 +1,393 @@
+{
+  "_comment": "Образец: тема t42 — воркер сливает сам по гейтам (ADR-019), без HumanGateRequested; тема t43 — миграция, сводит оркестратор с решением человека (C005); тема t44 — отказ слияния по C002 (ветка сдвинулась после проверки). В anchor журнала событий нет — это тот же ход, записанный событиями для сравнения.",
+  "events": [
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000001",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-26T10:00:00+03:00",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "topic_start",
+        "id": "t42"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "owner_kirill",
+        "role": "owner"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "topic_start"
+      },
+      "payload": {
+        "topic": "t42",
+        "title": "поиск по заметкам"
+      },
+      "metadata": {
+        "correlation_id": "topic-t42",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000002",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T10:00:30+03:00",
+      "sequence": 2,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "topic_start",
+        "id": "t42"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "orchestrator",
+        "role": "orchestrator"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "topic_start",
+        "step_id": "queue_topic",
+        "capability_id": "queue_topic"
+      },
+      "payload": {
+        "queue_file": "t42.json"
+      },
+      "metadata": {
+        "correlation_id": "topic-t42",
+        "schema_version": "1.0",
+        "causation_id": "dddddddd-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000003",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T10:01:00+03:00",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "entity",
+        "type": "Topic",
+        "id": "t42"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "anchor-queue",
+        "role": "delivery_scripts"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "topic_start",
+        "step_id": "start_worker",
+        "capability_id": "start_worker",
+        "entity": "Topic"
+      },
+      "payload": {
+        "from": "queued",
+        "to": "working",
+        "worktree": "wt/t42-notes-search",
+        "agent": "w-t42",
+        "active_workers": 2
+      },
+      "metadata": {
+        "correlation_id": "topic-t42",
+        "schema_version": "1.0",
+        "causation_id": "dddddddd-0000-4000-8000-000000000002"
+      }
+    },
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000004",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-26T10:01:05+03:00",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "topic_delivery",
+        "id": "t42"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "anchor-queue",
+        "role": "delivery_scripts"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "topic_delivery"
+      },
+      "payload": {
+        "topic": "t42"
+      },
+      "metadata": {
+        "correlation_id": "topic-t42",
+        "schema_version": "1.0",
+        "causation_id": "dddddddd-0000-4000-8000-000000000003"
+      }
+    },
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000005",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T11:40:00+03:00",
+      "sequence": 2,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "topic_delivery",
+        "id": "t42"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "w-t42",
+        "role": "worker"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "topic_delivery",
+        "step_id": "premerge_gates",
+        "capability_id": "run_premerge_gates"
+      },
+      "payload": {
+        "pull_request": "notes-app:57",
+        "base_commit": "9c1e2f0",
+        "verified_commit": "4b7d8a1",
+        "failures": [],
+        "known_failures": 0
+      },
+      "metadata": {
+        "correlation_id": "topic-t42",
+        "schema_version": "1.0",
+        "causation_id": "dddddddd-0000-4000-8000-000000000004"
+      }
+    },
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000006",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T11:41:00+03:00",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "entity",
+        "type": "PullRequest",
+        "id": "notes-app-57"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "w-t42",
+        "role": "worker"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "topic_delivery",
+        "step_id": "merge_own_pr",
+        "capability_id": "merge_own_pr",
+        "entity": "PullRequest"
+      },
+      "payload": {
+        "from": "open",
+        "to": "merged",
+        "merged_commit": "4b7d8a1",
+        "match_head_commit": true
+      },
+      "metadata": {
+        "correlation_id": "topic-t42",
+        "schema_version": "1.0",
+        "causation_id": "dddddddd-0000-4000-8000-000000000005"
+      }
+    },
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000007",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T11:42:00+03:00",
+      "sequence": 2,
+      "aggregate": {
+        "kind": "entity",
+        "type": "Topic",
+        "id": "t42"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "w-t42",
+        "role": "worker"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "topic_delivery",
+        "step_id": "report_done",
+        "capability_id": "worker_done",
+        "entity": "Topic"
+      },
+      "payload": {
+        "from": "working",
+        "to": "done",
+        "merged_prs": [
+          "notes-app:57"
+        ],
+        "questions": []
+      },
+      "metadata": {
+        "correlation_id": "topic-t42",
+        "schema_version": "1.0",
+        "causation_id": "dddddddd-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000008",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-26T12:00:00+03:00",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "exception_merge",
+        "id": "t43"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "orchestrator",
+        "role": "orchestrator"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "exception_merge"
+      },
+      "payload": {
+        "topic": "t43",
+        "pull_requests": [
+          "notes-api:31"
+        ],
+        "merge_exception": "migration"
+      },
+      "metadata": {
+        "correlation_id": "topic-t43",
+        "schema_version": "1.0"
+      }
+    },
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000009",
+      "event_type": "HumanGateRequested",
+      "occurred_at": "2026-10-26T12:00:10+03:00",
+      "sequence": 2,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "exception_merge",
+        "id": "t43"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "orchestrator",
+        "role": "orchestrator"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "exception_merge",
+        "step_id": "merge_by_gates",
+        "capability_id": "merge_by_gates",
+        "constraint_id": "C005"
+      },
+      "payload": {
+        "approver_role": "owner",
+        "reason": "PullRequest.has_migration = true",
+        "migration": "0042_notes_fts"
+      },
+      "metadata": {
+        "correlation_id": "topic-t43",
+        "schema_version": "1.0",
+        "causation_id": "dddddddd-0000-4000-8000-000000000008"
+      }
+    },
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000010",
+      "event_type": "HumanGateResolved",
+      "occurred_at": "2026-10-26T12:30:00+03:00",
+      "sequence": 3,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "exception_merge",
+        "id": "t43"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "owner_kirill",
+        "role": "owner"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "exception_merge",
+        "step_id": "merge_by_gates",
+        "capability_id": "merge_by_gates",
+        "constraint_id": "C005"
+      },
+      "payload": {
+        "decision": "approved",
+        "comment": "копия снята, миграция накачена",
+        "backup": "backups/notes-2026-10-26.dump"
+      },
+      "metadata": {
+        "correlation_id": "topic-t43",
+        "schema_version": "1.0",
+        "causation_id": "dddddddd-0000-4000-8000-000000000009"
+      }
+    },
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000011",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T12:41:00+03:00",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "entity",
+        "type": "PullRequest",
+        "id": "notes-api-31"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "orchestrator",
+        "role": "orchestrator"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "exception_merge",
+        "step_id": "merge_by_gates",
+        "capability_id": "merge_by_gates",
+        "entity": "PullRequest"
+      },
+      "payload": {
+        "from": "open",
+        "to": "merged",
+        "merged_commit": "e05a771",
+        "match_head_commit": true
+      },
+      "metadata": {
+        "correlation_id": "topic-t43",
+        "schema_version": "1.0",
+        "causation_id": "dddddddd-0000-4000-8000-000000000010"
+      }
+    },
+    {
+      "event_id": "dddddddd-0000-4000-8000-000000000012",
+      "event_type": "ConstraintViolated",
+      "occurred_at": "2026-10-26T13:05:00+03:00",
+      "sequence": 1,
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "topic_delivery",
+        "id": "t44"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "w-t43",
+        "role": "worker"
+      },
+      "scope": {
+        "system_id": "agent_delivery",
+        "process_id": "topic_delivery",
+        "step_id": "merge_own_pr",
+        "capability_id": "merge_own_pr",
+        "constraint_id": "C002"
+      },
+      "payload": {
+        "verified_commit": "77aa0c2",
+        "head_commit": "81f3b90",
+        "action": "ветка сдвинулась после проверки — слияние отклонено, гейты прогоняются заново"
+      },
+      "metadata": {
+        "correlation_id": "topic-t44",
+        "schema_version": "1.0"
+      }
+    }
+  ]
+}

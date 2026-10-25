@@ -1,0 +1,235 @@
+{
+  "system_id": "agent_delivery",
+  "processes": [
+    {
+      "process_id": "topic_start",
+      "name": "Постановка и запуск темы",
+      "status": "active",
+      "description": "Человек ставит тему — это и есть согласие на слияние (ADR-019). Оркестратор ставит её в очередь, очередь заводит дерево и воркера.",
+      "trigger": {
+        "kind": "human_request",
+        "description": "Человек ставит тему оркестратору (или прямо в окне воркера)."
+      },
+      "aggregate_entity": "Topic",
+      "steps": [
+        {
+          "step_id": "set_topic",
+          "name": "Поставить тему: якорь, что сделать, ограничения слияния",
+          "actor": "human",
+          "role": "owner",
+          "next": [
+            "queue_topic"
+          ],
+          "description": "Человеческий гейт цикла поставки стоит здесь, а не перед слиянием. «Не сливать» пишется сюда же."
+        },
+        {
+          "step_id": "queue_topic",
+          "name": "Поставить тему в очередь",
+          "actor": "agent",
+          "role": "orchestrator",
+          "capability_id": "queue_topic",
+          "transition": {
+            "entity": "Topic",
+            "to": "queued"
+          },
+          "next": [
+            "start_worker"
+          ]
+        },
+        {
+          "step_id": "start_worker",
+          "name": "Завести дерево и запустить воркера",
+          "actor": "system",
+          "role": "delivery_scripts",
+          "capability_id": "start_worker",
+          "transition": {
+            "entity": "Topic",
+            "from": "queued",
+            "to": "working"
+          },
+          "emits": [
+            "WorkerStarted"
+          ],
+          "on_failure": "retry"
+        }
+      ]
+    },
+    {
+      "process_id": "topic_delivery",
+      "name": "Работа воркера: сделать и слить",
+      "status": "active",
+      "description": "Поставленная тема = сделать И слить (ADR-019). Воркер сливает сам, если тема не исключение; иначе сдаёт без слияния, и тему сводит оркестратор (exception_merge).",
+      "trigger": {
+        "kind": "event",
+        "description": "WorkerStarted: воркер получил постановку от оркестратора."
+      },
+      "aggregate_entity": "Topic",
+      "steps": [
+        {
+          "step_id": "report_working",
+          "name": "Отметить состояние working",
+          "actor": "agent",
+          "role": "worker",
+          "capability_id": "report_state",
+          "next": [
+            "run_checks"
+          ]
+        },
+        {
+          "step_id": "run_checks",
+          "name": "Сделать работу и прогнать тесты через очередь",
+          "actor": "agent",
+          "role": "worker",
+          "capability_id": "run_checks",
+          "on_failure": "retry",
+          "next": [
+            "sync_main"
+          ]
+        },
+        {
+          "step_id": "sync_main",
+          "name": "Подтянуть свежий main",
+          "actor": "agent",
+          "role": "worker",
+          "capability_id": "sync_main",
+          "on_failure": "escalate",
+          "next": [
+            "premerge_gates"
+          ]
+        },
+        {
+          "step_id": "premerge_gates",
+          "name": "Прогнать гейты поверх свежего main",
+          "actor": "agent",
+          "role": "worker",
+          "capability_id": "run_premerge_gates",
+          "emits": [
+            "GatesFailed"
+          ],
+          "on_failure": "escalate",
+          "next": [
+            "merge_own_pr"
+          ],
+          "description": "Красный гейт или незнакомое падение — не слияние, а worker-done --not-done."
+        },
+        {
+          "step_id": "merge_own_pr",
+          "name": "Слить свой запрос на слияние",
+          "actor": "agent",
+          "role": "worker",
+          "capability_id": "merge_own_pr",
+          "condition": "Topic.merge_exception = none и Topic.merge_forbidden = false (C009); иначе шаг пропускается — тема сдаётся без слияния",
+          "transition": {
+            "entity": "PullRequest",
+            "from": "open",
+            "to": "merged"
+          },
+          "emits": [
+            "PullRequestMerged"
+          ],
+          "on_failure": "escalate",
+          "next": [
+            "report_done"
+          ],
+          "description": "Гейта человека нет (ADR-019): согласие дано в постановке, проверка детерминирована."
+        },
+        {
+          "step_id": "report_done",
+          "name": "Сдать итог: номера слитых запросов, вопросы человеку",
+          "actor": "agent",
+          "role": "worker",
+          "capability_id": "worker_done",
+          "transition": {
+            "entity": "Topic",
+            "from": "working",
+            "to": "done"
+          },
+          "emits": [
+            "WorkerReportedDone"
+          ]
+        }
+      ]
+    },
+    {
+      "process_id": "exception_merge",
+      "name": "Сведение исключений и пар оркестратором",
+      "status": "active",
+      "description": "Для того, что воркер не сливает сам (C009): пары фронт + бэк, миграции, выкат, правка ядра модели, тема, сданная без слияния. Пара сводится по гейтам без отдельного «да»; миграция и правка ядра — с решением человека (C005).",
+      "trigger": {
+        "kind": "event",
+        "description": "WorkerReportedDone с несданным слиянием."
+      },
+      "aggregate_entity": "PullRequest",
+      "steps": [
+        {
+          "step_id": "wait_done",
+          "name": "Дождаться свежего маркера сдачи",
+          "actor": "agent",
+          "role": "orchestrator",
+          "capability_id": "wait_worker_done",
+          "next": [
+            "backup_and_migrate"
+          ]
+        },
+        {
+          "step_id": "backup_and_migrate",
+          "name": "Снять копию базы и накатить миграцию",
+          "actor": "human",
+          "role": "owner",
+          "condition": "PullRequest.has_migration = true",
+          "next": [
+            "merge_by_gates"
+          ]
+        },
+        {
+          "step_id": "merge_by_gates",
+          "name": "Свести по гейтам и слить",
+          "actor": "agent",
+          "role": "orchestrator",
+          "capability_id": "merge_by_gates",
+          "human_gate": {
+            "required": true,
+            "reason": "constraint",
+            "constraint_id": "C005",
+            "approver_role": "owner",
+            "condition": "PullRequest.has_migration = true или PullRequest.touches_model_core = true или выкат во внешний мир; для пары и сданного без слияния гейта нет"
+          },
+          "transition": {
+            "entity": "PullRequest",
+            "from": "open",
+            "to": "merged"
+          },
+          "emits": [
+            "PullRequestMerged"
+          ],
+          "on_failure": "escalate"
+        }
+      ]
+    },
+    {
+      "process_id": "topic_close",
+      "name": "Закрытие темы",
+      "status": "active",
+      "description": "После слияния всех запросов темы: убрать дерево, ветку переименовать в merged/…, закрыть вкладку и якорь.",
+      "trigger": {
+        "kind": "event",
+        "description": "PullRequestMerged по последнему запросу темы."
+      },
+      "aggregate_entity": "Topic",
+      "steps": [
+        {
+          "step_id": "close_topic",
+          "name": "Закрыть тему",
+          "actor": "agent",
+          "role": "orchestrator",
+          "capability_id": "close_topic",
+          "transition": {
+            "entity": "Topic",
+            "from": "done",
+            "to": "closed"
+          }
+        }
+      ]
+    }
+  ]
+}

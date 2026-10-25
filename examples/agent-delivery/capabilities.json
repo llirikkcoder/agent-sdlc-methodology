@@ -1,0 +1,262 @@
+{
+  "system_id": "agent_delivery",
+  "capabilities": [
+    {
+      "capability_id": "queue_topic",
+      "name": "Поставить тему в очередь запуска",
+      "kind": "cli",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Topic"
+      ],
+      "inputs": {
+        "topic_file": "path: якорь, деревья, ветки, файл постановки"
+      },
+      "idempotency": "none",
+      "allowed_roles": [
+        "orchestrator"
+      ]
+    },
+    {
+      "capability_id": "start_worker",
+      "name": "Завести дерево и запустить воркера",
+      "kind": "cli",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Topic",
+        "Worktree"
+      ],
+      "preconditions": [
+        "C001: в дереве темы нет другого агента",
+        "C006: активных воркеров меньше ANCHOR_MAX"
+      ],
+      "outputs": {
+        "worktree": "path",
+        "agent_name": "string"
+      },
+      "idempotency": "none",
+      "constraints": [
+        "C001",
+        "C006"
+      ]
+    },
+    {
+      "capability_id": "report_state",
+      "name": "Отметить состояние воркера (working/waiting/stuck)",
+      "kind": "cli",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Topic"
+      ],
+      "inputs": {
+        "state": "enum",
+        "reason": "string"
+      },
+      "idempotency": "natural",
+      "allowed_roles": [
+        "worker"
+      ]
+    },
+    {
+      "capability_id": "run_checks",
+      "name": "Прогнать тесты и сборку через очередь тяжёлых команд",
+      "kind": "cli",
+      "effect": "read",
+      "human_gate_required": false,
+      "inputs": {
+        "command": "string"
+      },
+      "outputs": {
+        "exit_code": "int"
+      },
+      "idempotency": "natural",
+      "constraints": [
+        "C008"
+      ]
+    },
+    {
+      "capability_id": "sync_main",
+      "name": "Подтянуть свежий main в ветку темы",
+      "kind": "cli",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Worktree"
+      ],
+      "outputs": {
+        "conflict": "bool"
+      },
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "run_premerge_gates",
+      "name": "Прогнать гейты репозитория поверх свежего main",
+      "kind": "cli",
+      "effect": "read",
+      "human_gate_required": false,
+      "touches_entities": [
+        "GateRun"
+      ],
+      "inputs": {
+        "pull_request": "repo:number"
+      },
+      "outputs": {
+        "gate_run": "object",
+        "verified_commit": "sha"
+      },
+      "preconditions": [
+        "C003: гейты из main",
+        "C004: описание гейтов есть"
+      ],
+      "idempotency": "natural",
+      "constraints": [
+        "C003",
+        "C004"
+      ]
+    },
+    {
+      "capability_id": "merge_own_pr",
+      "name": "Слить свой запрос на слияние (squash, ровно проверенный коммит)",
+      "kind": "cli",
+      "effect": "write_compensable",
+      "human_gate_required": false,
+      "touches_entities": [
+        "PullRequest"
+      ],
+      "inputs": {
+        "pull_request": "repo:number",
+        "verified_commit": "sha"
+      },
+      "preconditions": [
+        "C002: main и ветка не сдвинулись после проверки",
+        "C004: гейты зелёные",
+        "C009: тема не исключение и слияние не запрещено"
+      ],
+      "compensation": {
+        "capability_id": "revert_merge",
+        "description": "откат — отдельный запрос на слияние с revert"
+      },
+      "idempotency": "key",
+      "constraints": [
+        "C002",
+        "C004",
+        "C009"
+      ],
+      "allowed_roles": [
+        "worker"
+      ]
+    },
+    {
+      "capability_id": "revert_merge",
+      "name": "Откатить слияние отдельным запросом с revert",
+      "kind": "cli",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "PullRequest"
+      ],
+      "idempotency": "none"
+    },
+    {
+      "capability_id": "worker_done",
+      "name": "Сдать тему: push, запрос на слияние, итог в якорь, маркер сдачи",
+      "kind": "cli",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Topic",
+        "PullRequest"
+      ],
+      "inputs": {
+        "summary": "string",
+        "not_done": "bool",
+        "pr": "number?"
+      },
+      "outputs": {
+        "marker": ".anchor/done.json"
+      },
+      "idempotency": "natural",
+      "allowed_roles": [
+        "worker"
+      ]
+    },
+    {
+      "capability_id": "wait_worker_done",
+      "name": "Дождаться свежего маркера сдачи",
+      "kind": "cli",
+      "effect": "read",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Topic"
+      ],
+      "inputs": {
+        "worktree": "path",
+        "since": "epoch"
+      },
+      "idempotency": "natural",
+      "constraints": [
+        "C007"
+      ]
+    },
+    {
+      "capability_id": "merge_by_gates",
+      "name": "Свести запрос (или пару) по гейтам и слить squash",
+      "kind": "cli",
+      "effect": "write_compensable",
+      "human_gate_required": false,
+      "touches_entities": [
+        "PullRequest",
+        "GateRun"
+      ],
+      "inputs": {
+        "anchor": "string",
+        "pull_requests": "list repo:number",
+        "migration": "string?",
+        "backup": "path?"
+      },
+      "preconditions": [
+        "C002",
+        "C003",
+        "C004",
+        "C010: миграция — только с файлом копии базы"
+      ],
+      "compensation": {
+        "capability_id": "revert_merge",
+        "description": "откат — отдельный запрос на слияние с revert"
+      },
+      "idempotency": "key",
+      "constraints": [
+        "C002",
+        "C003",
+        "C004",
+        "C005",
+        "C010"
+      ],
+      "allowed_roles": [
+        "orchestrator"
+      ]
+    },
+    {
+      "capability_id": "close_topic",
+      "name": "Закрыть тему: убрать дерево, ветку → merged/…, вкладку, закрыть якорь",
+      "kind": "cli",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Topic",
+        "Worktree"
+      ],
+      "preconditions": [
+        "все запросы темы слиты",
+        "в дереве нет незакоммиченного"
+      ],
+      "idempotency": "natural",
+      "allowed_roles": [
+        "orchestrator"
+      ]
+    }
+  ]
+}

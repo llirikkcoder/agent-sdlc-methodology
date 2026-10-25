@@ -1,0 +1,226 @@
+{
+  "system_id": "agent_delivery",
+  "spec_version": "0.1.0",
+  "purpose": "Поставлять изменения кода параллельными агентами-воркерами: человек ставит тему, оркестратор заводит под неё отдельное дерево и воркера, воркер делает работу и сам сливает её в main по детерминированным гейтам; человек нужен в постановке и в исключениях (миграция, выкат, правка ядра модели).",
+  "goals": [
+    {
+      "id": "G001",
+      "statement": "Готовая тема сливается в main без напоминания человека.",
+      "metric": "доля тем, где слияние потребовало отдельного «сливай» от человека = 0"
+    },
+    {
+      "id": "G002",
+      "statement": "В main не попадает коммит, который не прошёл гейты.",
+      "metric": "число слияний, где слитый коммит ≠ проверенному = 0"
+    },
+    {
+      "id": "G003",
+      "statement": "В любой момент видно, что в работе: у каждого живого дерева есть якорь и состояние воркера.",
+      "metric": "число деревьев без якоря или без отметки состояния старше порога = 0"
+    }
+  ],
+  "non_goals": [
+    "Система не ведёт общий командный трекер: схема личная, трекер локальный.",
+    "Система не синхронизирует трекер задач с CRM: только односторонняя ссылка.",
+    "Система не накатывает миграции и не выкатывает в прод — это делает человек."
+  ],
+  "roles": [
+    {
+      "id": "owner",
+      "kind": "human",
+      "description": "Владелец работы: ставит темы, решает исключения (миграции, выкат, правка ядра модели), возвращает тему на доработку.",
+      "may_approve": true
+    },
+    {
+      "id": "orchestrator",
+      "kind": "agent",
+      "description": "Агент-оркестратор: ставит темы в очередь, ждёт сдачи, сводит исключения и пары по гейтам, закрывает темы."
+    },
+    {
+      "id": "worker",
+      "kind": "agent",
+      "description": "Агент-разработчик в своём дереве: делает тему, прогоняет гейты, сливает свой запрос на слияние, сдаёт итог."
+    },
+    {
+      "id": "delivery_scripts",
+      "kind": "system",
+      "description": "Скрипты обвязки: очередь запуска, ограда воркера, очередь тяжёлых команд, проверка по гейтам."
+    }
+  ],
+  "hard_constraints": [
+    {
+      "id": "C001",
+      "rule": "Одна тема — одно дерево (git worktree) и один воркер; два агента в одном дереве запрещены.",
+      "severity": "critical",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "start_worker"
+        ],
+        "entities": [
+          "Topic",
+          "Worktree"
+        ]
+      },
+      "source": "anchor: README «Границы», DECISIONS «Worktree на тему»",
+      "status": "confirmed"
+    },
+    {
+      "id": "C002",
+      "rule": "Сливается ровно проверенный коммит поверх свежего main: если main или ветка сдвинулись после проверки — стоп и повторная проверка.",
+      "severity": "critical",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "merge_own_pr",
+          "merge_by_gates"
+        ],
+        "entities": [
+          "PullRequest"
+        ]
+      },
+      "source": "anchor: scripts/anchor-merge, пп. 5–6; skills/anchor/workers.md (--match-head-commit)",
+      "status": "confirmed"
+    },
+    {
+      "id": "C003",
+      "rule": "Гейты берутся из main, а не из проверяемой ветки: правка не может ослабить собственную проверку.",
+      "severity": "high",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "run_premerge_gates",
+          "merge_by_gates"
+        ]
+      },
+      "source": "anchor: scripts/anchor-merge, п. 3",
+      "status": "confirmed"
+    },
+    {
+      "id": "C004",
+      "rule": "Нет описания гейтов в репозитории — нет слияния агентом; падения допустимы только из списка известных.",
+      "severity": "critical",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "run_premerge_gates",
+          "merge_own_pr",
+          "merge_by_gates"
+        ],
+        "entities": [
+          "GateRun"
+        ]
+      },
+      "source": "anchor: scripts/anchor-merge, п. 4; skills/anchor/closing.md",
+      "status": "confirmed"
+    },
+    {
+      "id": "C005",
+      "rule": "Миграция базы, выкат, который публикует или тратит деньги, и правка ядра модели (effect, human_gate_required, system_level, ограничения слоя 1) сливаются только с решением человека.",
+      "severity": "critical",
+      "enforcement": "gate",
+      "applies_to": {
+        "capabilities": [
+          "merge_by_gates"
+        ],
+        "entities": [
+          "PullRequest"
+        ]
+      },
+      "source": "ADR-019 п. 4; anchor: DECISIONS «Пересмотрено 25.10.2026»",
+      "status": "confirmed"
+    },
+    {
+      "id": "C006",
+      "rule": "Одновременно работает не больше ANCHOR_MAX воркеров (по умолчанию 3); остальные темы ждут в очереди.",
+      "severity": "medium",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "start_worker"
+        ]
+      },
+      "source": "anchor: scripts/anchor-queue",
+      "status": "confirmed"
+    },
+    {
+      "id": "C007",
+      "rule": "Готовность воркера определяется по маркеру сдачи, вышедшему не раньше постановки, а не по статусу терминала.",
+      "severity": "high",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "wait_worker_done"
+        ]
+      },
+      "source": "anchor: scripts/worker-done (--wait, --since)",
+      "status": "confirmed"
+    },
+    {
+      "id": "C008",
+      "rule": "Тяжёлые команды (тесты, сборка) воркеры запускают через общую очередь, не больше HEAVY_SLOTS разом.",
+      "severity": "medium",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "run_checks"
+        ]
+      },
+      "source": "anchor: scripts/heavy",
+      "status": "confirmed"
+    },
+    {
+      "id": "C009",
+      "rule": "Воркер не сливает сам исключения C005, изменения, которые проверяются только вместе (пара фронт + бэк), и тему, где постановка прямо запретила слияние: он сдаёт их без слияния.",
+      "severity": "critical",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "merge_own_pr"
+        ],
+        "entities": [
+          "Topic",
+          "PullRequest"
+        ]
+      },
+      "source": "anchor: skills/anchor/workers.md «Поставленная тема = сделать И слить»",
+      "status": "confirmed"
+    },
+    {
+      "id": "C010",
+      "rule": "Миграция применяется только после копии базы; слияние с миграцией без файла копии отклоняется.",
+      "severity": "critical",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "merge_by_gates"
+        ]
+      },
+      "source": "anchor: scripts/anchor-merge, п. 7 (--migration требует --backup)",
+      "status": "confirmed"
+    },
+    {
+      "id": "C011",
+      "rule": "Договорённости между сессиями записываются в трекер; сообщение между агентами записью решения не считается.",
+      "severity": "medium",
+      "enforcement": "audit_only",
+      "applies_to": {},
+      "source": "anchor: DECISIONS «Сессии говорят друг с другом, решения пишут в трекер»",
+      "status": "confirmed"
+    },
+    {
+      "id": "C012",
+      "rule": "После каждого слияния main проверяется заново, и красный main останавливает следующие слияния до починки.",
+      "severity": "high",
+      "enforcement": "post_check",
+      "applies_to": {
+        "processes": [
+          "topic_delivery",
+          "exception_merge"
+        ]
+      },
+      "source": "anchor: DECISIONS — «смысловой конфликт двух тем ловит следующая проверка в main»; механизма остановки слияний нет",
+      "status": "unconfirmed"
+    }
+  ]
+}

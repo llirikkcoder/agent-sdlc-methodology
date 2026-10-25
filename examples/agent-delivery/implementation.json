@@ -1,0 +1,208 @@
+{
+  "system_id": "agent_delivery",
+  "repository": {
+    "name": "anchor (плагин Claude Code)",
+    "ref": "a2ef20e803536cb5d00483d73cc1ceef9d6d611e",
+    "inspected_at": "2026-10-26"
+  },
+  "bindings": [
+    {
+      "capability_id": "queue_topic",
+      "status": "implemented",
+      "kind": "cli",
+      "location": {
+        "path": "scripts/anchor-queue",
+        "symbol": "cmd_add"
+      },
+      "evidence": "code: scripts/anchor-queue, cmd_add",
+      "verified_at": "2026-10-26"
+    },
+    {
+      "capability_id": "start_worker",
+      "status": "implemented",
+      "kind": "cli",
+      "location": {
+        "path": "scripts/anchor-queue",
+        "symbol": "start"
+      },
+      "evidence": "code: scripts/anchor-queue, start",
+      "verified_at": "2026-10-26",
+      "notes": "Дерево — git worktree add, пространство — herdr worktree open, агент — herdr agent start; ограда воркера обязательна."
+    },
+    {
+      "capability_id": "report_state",
+      "status": "implemented",
+      "kind": "cli",
+      "location": {
+        "path": "scripts/worker-state",
+        "symbol": "write_state"
+      },
+      "evidence": "code: scripts/worker-state, write_state",
+      "verified_at": "2026-10-26"
+    },
+    {
+      "capability_id": "run_checks",
+      "status": "implemented",
+      "kind": "cli",
+      "location": {
+        "path": "scripts/heavy"
+      },
+      "evidence": "code: scripts/heavy",
+      "verified_at": "2026-10-26"
+    },
+    {
+      "capability_id": "sync_main",
+      "status": "implemented",
+      "kind": "cli",
+      "location": {
+        "path": "skills/anchor/workers.md"
+      },
+      "evidence": "docs: skills/anchor/workers.md — «подтянуть свежий main в обе ветки»; отдельного скрипта нет, выполняется git",
+      "verified_at": "2026-10-26"
+    },
+    {
+      "capability_id": "run_premerge_gates",
+      "status": "implemented",
+      "kind": "cli",
+      "location": {
+        "path": "scripts/anchor-merge",
+        "symbol": "check_gates"
+      },
+      "evidence": "code: scripts/anchor-merge, check_gates",
+      "verified_at": "2026-10-26",
+      "notes": "Воркер может вызвать anchor-merge --check-only или проверку, принятую в репозитории."
+    },
+    {
+      "capability_id": "merge_own_pr",
+      "status": "implemented",
+      "kind": "cli",
+      "location": {
+        "path": "skills/anchor/workers.md"
+      },
+      "evidence": "docs: skills/anchor/workers.md — gh pr merge --squash --match-head-commit; отдельного скрипта нет",
+      "verified_at": "2026-10-26",
+      "notes": "Ограда воркера пускает слияние своего запроса с версии 0.1.3."
+    },
+    {
+      "capability_id": "revert_merge",
+      "status": "planned",
+      "kind": "cli",
+      "location": {
+        "path": "skills/anchor/closing.md"
+      },
+      "evidence": "docs: откат не автоматизирован — обычный запрос на слияние с revert",
+      "verified_at": "2026-10-26"
+    },
+    {
+      "capability_id": "worker_done",
+      "status": "implemented",
+      "kind": "cli",
+      "location": {
+        "path": "scripts/worker-done"
+      },
+      "evidence": "code: scripts/worker-done",
+      "verified_at": "2026-10-26"
+    },
+    {
+      "capability_id": "wait_worker_done",
+      "status": "implemented",
+      "kind": "cli",
+      "location": {
+        "path": "scripts/worker-done"
+      },
+      "evidence": "code: scripts/worker-done",
+      "verified_at": "2026-10-26",
+      "notes": "Режим --wait <дерево> --since <эпоха>."
+    },
+    {
+      "capability_id": "merge_by_gates",
+      "status": "implemented",
+      "kind": "cli",
+      "location": {
+        "path": "scripts/anchor-merge",
+        "symbol": "main"
+      },
+      "evidence": "code: scripts/anchor-merge, main",
+      "verified_at": "2026-10-26"
+    },
+    {
+      "capability_id": "close_topic",
+      "status": "implemented",
+      "kind": "cli",
+      "location": {
+        "path": "commands/anchor-done.md"
+      },
+      "evidence": "docs: commands/anchor-done.md — команда /anchor-done, шаги выполняет агент",
+      "verified_at": "2026-10-26"
+    }
+  ],
+  "storage": [
+    {
+      "name": "anchor_tracker",
+      "kind": "collection",
+      "entities": [
+        "Topic"
+      ],
+      "status": "unconfirmed",
+      "notes": "Якоря и итоги — в трекере beads (.beads в основном дереве); схема трекера не сверялась."
+    },
+    {
+      "name": "done_marker",
+      "kind": "file",
+      "entities": [
+        "Topic"
+      ],
+      "notes": ".anchor/done.json в дереве темы; мимо коммита (info/exclude)."
+    },
+    {
+      "name": "state_marker",
+      "kind": "file",
+      "entities": [
+        "Topic"
+      ],
+      "notes": ".anchor/state.json в дереве темы."
+    },
+    {
+      "name": "launch_queue",
+      "kind": "queue",
+      "entities": [
+        "Topic"
+      ],
+      "notes": "Каталог ANCHOR_QUEUE_DIR (по умолчанию ~/.anchor/queue)."
+    },
+    {
+      "name": "gate_runs",
+      "kind": "file",
+      "entities": [
+        "GateRun"
+      ],
+      "notes": "result.json в ANCHOR_MERGE_LOGS/<якорь>-<время>/."
+    },
+    {
+      "name": "repo_gates",
+      "kind": "file",
+      "notes": ".anchor/gates в каждом репозитории (ini: [gates], [known], [env], [link])."
+    }
+  ],
+  "event_sinks": [
+    {
+      "name": "tracker_summaries",
+      "storage": "anchor_tracker",
+      "status": "unconfirmed",
+      "notes": "Журнала событий в цикле поставки нет (ADR-019 п. 6): след — итог в якоре, запрос на слияние и result.json прогона гейтов. events.sample.json показывает, как тот же ход выглядел бы событиями."
+    }
+  ],
+  "checks": [
+    {
+      "id": "shell_syntax",
+      "command": "sh -n hooks/anchor-session-start.sh && bash -n scripts/worker-done scripts/heavy",
+      "stage": "pre_merge",
+      "description": "синтаксис shell-скриптов"
+    },
+    {
+      "id": "python_syntax",
+      "command": "python3 -m py_compile scripts/anchor-merge scripts/anchor-queue scripts/worker-state scripts/anchor-status",
+      "stage": "pre_merge"
+    }
+  ]
+}
