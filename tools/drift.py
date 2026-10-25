@@ -186,7 +186,8 @@ def run(example: Path, repo: Path | None, strict: bool) -> list[Hole]:
                 holes.append(Hole("ERROR", "stale", None, None, None, f"storage {st['name']}: {p}"))
     if strict:
         for h in holes:
-            if h.level == "WARN":
+            # уровень неподтверждённого ограничения уже задан по severity (ADR-017): high в strict — WARN, не ERROR
+            if h.level == "WARN" and h.reason != "unconfirmed_constraint":
                 h.level = "ERROR"
     order = {"ERROR": 0, "WARN": 1, "INFO": 2}
     holes.sort(key=lambda h: (order[h.level], h.reason, h.process_id or "", h.step_id or ""))
