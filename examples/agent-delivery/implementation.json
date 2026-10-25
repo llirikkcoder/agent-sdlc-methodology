@@ -2,7 +2,7 @@
   "system_id": "agent_delivery",
   "repository": {
     "name": "anchor (плагин Claude Code)",
-    "ref": "a2ef20e803536cb5d00483d73cc1ceef9d6d611e",
+    "ref": "c491bc74fb87f099cbd7998cd1d093d937df89e5",
     "inspected_at": "2026-10-26"
   },
   "bindings": [
