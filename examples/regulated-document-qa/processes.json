@@ -4,45 +4,45 @@
     {
       "process_id": "prepare_regulator_response",
       "name": "Подготовка ответа регулятору",
-      "description": "Ключевой флоу: письмо регулятора → дерево подвопросов → черновик на каждый лист (RAG) → GxP-судья → согласование человеком (четыре глаза) → сборка → экспорт. Роутер /prepare за флагом PREPARE_FLOW_ENABLED.",
+      "description": "Ключевой флоу: письмо регулятора → дерево подвопросов → черновик на каждый лист (RAG) → судья качества → согласование человеком (четыре глаза) → сборка → экспорт. Роутер /prepare за флагом PREPARE_FLOW_ENABLED.",
       "status": "active",
       "trigger": { "kind": "human_request", "description": "Эксперт загружает письмо регулятора и запускает декомпозицию." },
       "aggregate_entity": "RegulatorRequest",
       "steps": [
-        { "step_id": "upload_letter", "name": "Загрузить письмо регулятора", "actor": "human", "role": "gxp_expert", "capability_id": "upload_document" },
+        { "step_id": "upload_letter", "name": "Загрузить письмо регулятора", "actor": "human", "role": "expert", "capability_id": "upload_document" },
         { "step_id": "decompose_letter", "name": "Декомпозировать письмо в дерево подвопросов", "actor": "agent", "role": "rag_agent", "capability_id": "decompose_request", "transition": { "entity": "RegulatorRequest", "to": "draft" }, "on_failure": "abort" },
         { "step_id": "generate_leaf_drafts", "name": "Собрать черновик на каждый лист (per-лист RAG)", "actor": "agent", "role": "rag_agent", "capability_id": "generate_leaf_draft", "transition": { "entity": "RequestNode", "from": "idle", "to": "draft" }, "emits": ["DraftGenerated"], "on_failure": "skip", "next": ["judge_leaf_draft"] },
-        { "step_id": "judge_leaf_draft", "name": "Оценить черновик GxP-судьёй", "actor": "agent", "role": "gxp_judge", "capability_id": "judge_answer", "description": "При requires_expert_review или confidence < GXP_VALIDATION_THRESHOLD лист уходит сразу в review (idle→review), иначе остаётся draft.", "transition": { "entity": "RequestNode", "from": "idle", "to": "review" }, "condition": "judge.requires_expert_review или confidence < порога", "next": ["submit_for_review", "review_node"] },
-        { "step_id": "submit_for_review", "name": "Передать узел на проверку", "actor": "human", "role": "gxp_expert", "capability_id": "submit_node_for_review", "transition": { "entity": "RequestNode", "from": "draft", "to": "review" }, "next": ["assign_reviewer", "review_node"] },
-        { "step_id": "assign_reviewer", "name": "Назначить проверяющего", "actor": "human", "role": "gxp_expert", "capability_id": "assign_node_reviewer", "description": "Информационное назначение (SPEC-R2); не заменяет гейт согласования.", "next": ["review_node"] },
-        { "step_id": "review_node", "name": "Согласовать узел", "actor": "human", "role": "gxp_expert", "capability_id": "approve_request_node", "description": "Проверяющий правит expert_answer и/или ставит approve. C002: автор текста не может согласовать сам.", "transition": { "entity": "RequestNode", "from": "review", "to": "approved" }, "next": ["rework_node", "assemble_response"] },
-        { "step_id": "rework_node", "name": "Вернуть узел на доработку", "actor": "human", "role": "gxp_expert", "capability_id": "rework_request_node", "transition": { "entity": "RequestNode", "from": "review", "to": "draft" }, "condition": "проверяющий не согласен с черновиком", "next": ["submit_for_review"] },
+        { "step_id": "judge_leaf_draft", "name": "Оценить черновик судьёй качества", "actor": "agent", "role": "quality_judge", "capability_id": "judge_answer", "description": "При requires_expert_review или confidence < QUALITY_THRESHOLD лист уходит сразу в review (idle→review), иначе остаётся draft.", "transition": { "entity": "RequestNode", "from": "idle", "to": "review" }, "condition": "judge.requires_expert_review или confidence < порога", "next": ["submit_for_review", "review_node"] },
+        { "step_id": "submit_for_review", "name": "Передать узел на проверку", "actor": "human", "role": "expert", "capability_id": "submit_node_for_review", "transition": { "entity": "RequestNode", "from": "draft", "to": "review" }, "next": ["assign_reviewer", "review_node"] },
+        { "step_id": "assign_reviewer", "name": "Назначить проверяющего", "actor": "human", "role": "expert", "capability_id": "assign_node_reviewer", "description": "Информационное назначение (SPEC-R2); не заменяет гейт согласования.", "next": ["review_node"] },
+        { "step_id": "review_node", "name": "Согласовать узел", "actor": "human", "role": "expert", "capability_id": "approve_request_node", "description": "Проверяющий правит expert_answer и/или ставит approve. C002: автор текста не может согласовать сам.", "transition": { "entity": "RequestNode", "from": "review", "to": "approved" }, "next": ["rework_node", "assemble_response"] },
+        { "step_id": "rework_node", "name": "Вернуть узел на доработку", "actor": "human", "role": "expert", "capability_id": "rework_request_node", "transition": { "entity": "RequestNode", "from": "review", "to": "draft" }, "condition": "проверяющий не согласен с черновиком", "next": ["submit_for_review"] },
         { "step_id": "assemble_response", "name": "Собрать итоговый ответ из согласованных узлов", "actor": "system", "role": "rag_agent", "capability_id": "assemble_response", "transition": { "entity": "RegulatorRequest", "from": "in_progress", "to": "ready" }, "condition": "все терминальные узлы approved" },
-        { "step_id": "export_response", "name": "Выгрузить ответ для отправки регулятору", "actor": "human", "role": "gxp_expert", "capability_id": "export_response", "emits": ["AnswerExported"], "description": "Файл уходит за границу системы; отправку регулятору делает человек вне системы (non_goal)." }
+        { "step_id": "export_response", "name": "Выгрузить ответ для отправки регулятору", "actor": "human", "role": "expert", "capability_id": "export_response", "emits": ["AnswerExported"], "description": "Файл уходит за границу системы; отправку регулятору делает человек вне системы (non_goal)." }
       ],
       "outcomes": ["ответ собран и выгружен", "дерево остаётся in_progress до согласования всех узлов"]
     },
     {
       "process_id": "answer_chat_question",
-      "name": "Ответ на вопрос в чате с GxP-гейтом",
-      "description": "Граф LangGraph agent/graph.py: query_analysis → read_file → resolve_search_query → (clarify|query_expansion) → hyde → sgr_search → answer_question → reflect; затем детерминированный гейт и доставка или постановка в очередь проверки.",
+      "name": "Ответ на вопрос в чате с гейтом качества",
+      "description": "Граф агента agent/graph.py: query_analysis → read_file → resolve_search_query → (clarify|query_expansion) → hyde → evidence_search → answer_question → reflect; затем детерминированный гейт и доставка или постановка в очередь проверки.",
       "status": "active",
       "trigger": { "kind": "api_call", "description": "POST /v1/chat/stream (или /v1/chat) от пользователя." },
       "aggregate_entity": "ChatMessage",
       "steps": [
-        { "step_id": "analyze_query", "name": "Разобрать запрос: sticky-препарат, интент, идентификаторы", "actor": "agent", "role": "rag_agent", "capability_id": "analyze_query" },
+        { "step_id": "analyze_query", "name": "Разобрать запрос: закреплённый предмет запроса, интент, идентификаторы", "actor": "agent", "role": "rag_agent", "capability_id": "analyze_query" },
         { "step_id": "read_attached_file", "name": "Прочитать прикреплённый файл", "actor": "agent", "role": "rag_agent", "capability_id": "read_attached_file", "condition": "к чату приложен файл" },
         { "step_id": "resolve_search_query", "name": "Переформулировать запрос с учётом истории чата", "actor": "agent", "role": "rag_agent", "capability_id": "resolve_search_query", "next": ["ask_clarification", "expand_query"] },
-        { "step_id": "ask_clarification", "name": "Запросить уточнение у пользователя", "actor": "agent", "role": "rag_agent", "capability_id": "deliver_chat_answer", "condition": "needs_clarification", "description": "Ветка END графа: вопрос-уточнение вместо ответа; гейт не нужен — это не фактический ответ.", "human_gate": { "required": true, "reason": "constraint", "approver_role": "gxp_expert", "constraint_id": "C001", "condition": "не срабатывает: ответ-уточнение не содержит утверждений по досье (gxp_status=skipped)" } },
+        { "step_id": "ask_clarification", "name": "Запросить уточнение у пользователя", "actor": "agent", "role": "rag_agent", "capability_id": "deliver_chat_answer", "condition": "needs_clarification", "description": "Ветка END графа: вопрос-уточнение вместо ответа; гейт не нужен — это не фактический ответ.", "human_gate": { "required": true, "reason": "constraint", "approver_role": "expert", "constraint_id": "C001", "condition": "не срабатывает: ответ-уточнение не содержит утверждений по документам корпуса (quality_status=skipped)" } },
         { "step_id": "expand_query", "name": "Расширить запрос (multi-query)", "actor": "agent", "role": "rag_agent", "capability_id": "expand_query" },
         { "step_id": "hyde", "name": "Сгенерировать гипотетический документ (HyDE)", "actor": "agent", "role": "rag_agent", "capability_id": "hyde_generate", "condition": "HYDE включён" },
         { "step_id": "retrieve_evidence", "name": "Найти подтверждающие фрагменты (гибридный поиск)", "actor": "agent", "role": "rag_agent", "capability_id": "retrieve_evidence" },
         { "step_id": "generate_answer", "name": "Сгенерировать ответ с inline-ссылками на источники", "actor": "agent", "role": "rag_agent", "capability_id": "generate_answer" },
-        { "step_id": "reflect", "name": "Оценить ответ GxP-судьёй (3 критерия)", "actor": "agent", "role": "gxp_judge", "capability_id": "judge_answer", "emits": ["JudgeVerdictRecorded"] },
-        { "step_id": "deliver_or_escalate", "name": "Доставить ответ или передать эксперту", "actor": "agent", "role": "rag_agent", "capability_id": "deliver_chat_answer", "human_gate": { "required": true, "reason": "constraint", "approver_role": "gxp_expert", "constraint_id": "C001", "condition": "гейт срабатывает, когда судья вернул failed (среднее < 0.7 или критерий < 0.6), нет источников или ответ распознан как no_answer; при passed ответ доставляется сразу" }, "next": ["enqueue_review"] },
+        { "step_id": "reflect", "name": "Оценить ответ судьёй качества (3 критерия)", "actor": "agent", "role": "quality_judge", "capability_id": "judge_answer", "emits": ["JudgeVerdictRecorded"] },
+        { "step_id": "deliver_or_escalate", "name": "Доставить ответ или передать эксперту", "actor": "agent", "role": "rag_agent", "capability_id": "deliver_chat_answer", "human_gate": { "required": true, "reason": "constraint", "approver_role": "expert", "constraint_id": "C001", "condition": "гейт срабатывает, когда судья вернул failed (среднее < 0.7 или критерий < 0.6), нет источников или ответ распознан как no_answer; при passed ответ доставляется сразу" }, "next": ["enqueue_review"] },
         { "step_id": "enqueue_review", "name": "Поставить ответ в очередь проверки", "actor": "system", "role": "rag_agent", "capability_id": "enqueue_review_item", "condition": "гейт сработал", "transition": { "entity": "ReviewItem", "to": "pending" }, "emits": ["ReviewItemEnqueued"] }
       ],
-      "outcomes": ["ответ доставлен (gxp_status=passed)", "пользователь видит уведомление о передаче эксперту, ответ в очереди", "задан уточняющий вопрос"]
+      "outcomes": ["ответ доставлен (quality_status=passed)", "пользователь видит уведомление о передаче эксперту, ответ в очереди", "задан уточняющий вопрос"]
     },
     {
       "process_id": "review_queue_item",
@@ -52,12 +52,12 @@
       "trigger": { "kind": "event", "description": "Появился элемент очереди со status=pending.", "event_type": "ReviewItemEnqueued" },
       "aggregate_entity": "ReviewItem",
       "steps": [
-        { "step_id": "claim", "name": "Взять элемент в работу", "actor": "human", "role": "gxp_expert", "capability_id": "claim_review_item", "transition": { "entity": "ReviewItem", "from": "pending", "to": "claimed" } },
-        { "step_id": "save_draft", "name": "Сохранить черновик экспертного ответа", "actor": "human", "role": "gxp_expert", "capability_id": "save_review_draft", "condition": "эксперт правит ответ в несколько подходов", "next": ["answer", "reject"] },
-        { "step_id": "answer", "name": "Дать экспертный ответ", "actor": "human", "role": "gxp_expert", "capability_id": "answer_review_item", "transition": { "entity": "ReviewItem", "from": "claimed", "to": "resolved" }, "next": ["notify_status"] },
-        { "step_id": "reject", "name": "Отклонить элемент", "actor": "human", "role": "gxp_expert", "capability_id": "reject_review_item", "transition": { "entity": "ReviewItem", "from": "claimed", "to": "rejected" }, "next": ["notify_status"] },
+        { "step_id": "claim", "name": "Взять элемент в работу", "actor": "human", "role": "expert", "capability_id": "claim_review_item", "transition": { "entity": "ReviewItem", "from": "pending", "to": "claimed" } },
+        { "step_id": "save_draft", "name": "Сохранить черновик экспертного ответа", "actor": "human", "role": "expert", "capability_id": "save_review_draft", "condition": "эксперт правит ответ в несколько подходов", "next": ["answer", "reject"] },
+        { "step_id": "answer", "name": "Дать экспертный ответ", "actor": "human", "role": "expert", "capability_id": "answer_review_item", "transition": { "entity": "ReviewItem", "from": "claimed", "to": "resolved" }, "next": ["notify_status"] },
+        { "step_id": "reject", "name": "Отклонить элемент", "actor": "human", "role": "expert", "capability_id": "reject_review_item", "transition": { "entity": "ReviewItem", "from": "claimed", "to": "rejected" }, "next": ["notify_status"] },
         { "step_id": "notify_status", "name": "Уведомить о смене статуса", "actor": "system", "role": "scheduler", "capability_id": "notify_review_status", "condition": "NOTIFY_ENABLED=1", "next": ["reopen"] },
-        { "step_id": "reopen", "name": "Переоткрыть закрытый элемент", "actor": "human", "role": "gxp_expert", "capability_id": "reopen_review_item", "condition": "решение нужно пересмотреть", "transition": { "entity": "ReviewItem", "from": "resolved", "to": "claimed" } }
+        { "step_id": "reopen", "name": "Переоткрыть закрытый элемент", "actor": "human", "role": "expert", "capability_id": "reopen_review_item", "condition": "решение нужно пересмотреть", "transition": { "entity": "ReviewItem", "from": "resolved", "to": "claimed" } }
       ]
     },
     {
@@ -70,14 +70,14 @@
       "steps": [
         { "step_id": "upload", "name": "Загрузить документ", "actor": "human", "role": "reviewer", "capability_id": "upload_document", "transition": { "entity": "CorpusDocument", "to": "uploaded" } },
         { "step_id": "index", "name": "Распарсить, нарезать, эмбеддить и записать", "actor": "system", "role": "ingest_worker", "capability_id": "index_document", "transition": { "entity": "CorpusDocument", "from": "uploaded", "to": "indexed" }, "on_failure": "retry", "next": ["reindex", "delete"] },
-        { "step_id": "reindex", "name": "Переиндексировать документ", "actor": "human", "role": "gxp_expert", "capability_id": "reindex_document", "condition": "документ failed или изменился парсер", "transition": { "entity": "CorpusDocument", "from": "failed", "to": "indexed" } },
-        { "step_id": "delete", "name": "Удалить документ из корпуса", "actor": "human", "role": "gxp_expert", "capability_id": "delete_corpus_document", "transition": { "entity": "CorpusDocument", "from": "indexed", "to": "deleted" }, "emits": ["DocumentDeleted"] }
+        { "step_id": "reindex", "name": "Переиндексировать документ", "actor": "human", "role": "expert", "capability_id": "reindex_document", "condition": "документ failed или изменился парсер", "transition": { "entity": "CorpusDocument", "from": "failed", "to": "indexed" } },
+        { "step_id": "delete", "name": "Удалить документ из корпуса", "actor": "human", "role": "expert", "capability_id": "delete_corpus_document", "transition": { "entity": "CorpusDocument", "from": "indexed", "to": "deleted" }, "emits": ["DocumentDeleted"] }
       ]
     },
     {
       "process_id": "scheduled_ingest_pass",
       "name": "Плановый проход индексации",
-      "description": "Cron или администратор запускает проход; каждый проход — строка ingest_events со статусом, стадиями и heartbeat (D-MEASURE, SPEC-R51).",
+      "description": "Cron или администратор запускает проход; каждый проход — строка ingest_events со статусом, стадиями и heartbeat (SPEC-D2, SPEC-R51).",
       "status": "active",
       "trigger": { "kind": "schedule", "description": "cron (triggered_by=cron) либо POST /admin/ingest-trigger (manual/api)." },
       "aggregate_entity": "IngestRun",

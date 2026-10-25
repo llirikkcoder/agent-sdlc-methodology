@@ -1,6 +1,6 @@
 # Пример: regulated-document-qa — вопросно-ответная система по регулируемой документации
 
-Домен: экспертная команда готовит ответы на запросы надзорного органа по регулируемой документации. Система — агентный RAG с моделью-оценщиком, очередью проверки экспертом и журналом аудита; подлежит квалификации. Детали предметной области в файлах слоёв оставлены ровно настолько, насколько нужны, чтобы пример был рабочим.
+Домен: экспертная команда готовит ответы на запросы надзорного органа по регулируемой документации. Система — агентный RAG с моделью-оценщиком, очередью проверки экспертом и журналом аудита; подлежит квалификации. Файлы слоёв обобщены: отраслевые термины, коды внутренних документов и подробности стека убраны, роли и правила названы по смыслу (эксперт, судья качества, четыре глаза, персональные данные).
 
 Пример заполнен **по реальному коду** закрытой пилотной системы (только чтением, 25.10.2026) и затем **обезличен**: имена репозитория, модулей, таблиц, классов и пунктов спецификации заменены (`SPEC-*`), структура привязок, маршрутов и переходов сохранена. Поэтому `drift.py --repo` против кода из этого репозитория не воспроизводится; на момент снятия привязок сверка давала 0 расхождений.
 
@@ -8,26 +8,26 @@
 
 | Слой | Файл | Источник в коде |
 |---|---|---|
-| 1 Назначение | `purpose.json` | роли — `db/models.py` `User.role` (reviewer/gxp_expert/admin/inspector), `auth/dependencies.py` (`require_expert`, `require_inspector`); ограничения — `agent/gxp_gate.py` (SPEC-G1), `api/routers/prepare.py` (четыре глаза, SPEC-R1/2205), `db/models.py ChatAuditEvent` (append-only), `ingest/pii_exclusion.py` (SPEC-P1) |
+| 1 Назначение | `purpose.json` | роли — `db/models.py` `User.role` (reviewer/expert/admin/inspector), `auth/dependencies.py` (`require_expert`, `require_inspector`); ограничения — `agent/quality_gate.py` (SPEC-G1), `api/routers/prepare.py` (четыре глаза, SPEC-R1/R5), `db/models.py ChatAuditEvent` (append-only), `ingest/pii_exclusion.py` (SPEC-P1) |
 | 2 Домен | `domain.json` | таблицы `request_trees`, `request_questions`, `request_nodes`, `fallback_queue`, `chats`, `chat_messages`, `ingest_events`, `answer_records`, `users` (`db/models.py`); состояния узла `idle→draft→review→approved` и переходы — `api/routers/prepare.py`; очередь `pending→claimed→resolved/rejected`, `reopen` — `db/fallback_queue.py` |
-| 3 Процессы | `processes.json` | флоу «Подготовка ответа регулятору» — роутер `/prepare`; граф чата — `agent/graph.py` (узлы `query_analysis`, `read_file`, `resolve_search_query`, `query_expansion`, `hyde`, `sgr_search`, `answer_question`, `reflect`); очередь — `/fallback/*`; корпус — `/upload`, `/collection/sources/*`; индексация — `/admin/ingest-*` |
+| 3 Процессы | `processes.json` | флоу «Подготовка ответа регулятору» — роутер `/prepare`; граф чата — `agent/graph.py` (узлы `query_analysis`, `read_file`, `resolve_search_query`, `query_expansion`, `hyde`, `evidence_search`, `answer_question`, `reflect`); очередь — `/fallback/*`; корпус — `/upload`, `/collection/sources/*`; индексация — `/admin/ingest-*` |
 | 4 Возможности | `capabilities.json` | контракты поверх маршрутов, узлов графа и функций; эффект и гейт выведены из кода (удаление документа и экспорт — необратимы) |
-| 5 Реализация | `implementation.json` | пути, символы, маршруты, узлы графа, таблицы, флаги (`PREPARE_FLOW_ENABLED`, `GXP_VALIDATION_GATE_ENABLED`, `HUMAN_FALLBACK_ENABLED`, `NOTIFY_ENABLED`) |
-| События | `events.sample.json` | типы аудит-событий кода (`gxp_validation_run`, `fallback_*`, `request_node_*`, `document_*`) показаны в `payload.audit_event_type` |
+| 5 Реализация | `implementation.json` | пути, символы, маршруты, узлы графа, таблицы, флаги (`PREPARE_FLOW_ENABLED`, `QUALITY_GATE_ENABLED`, `HUMAN_FALLBACK_ENABLED`, `NOTIFY_ENABLED`) |
+| События | `events.sample.json` | типы аудит-событий кода (`quality_check_run`, `fallback_*`, `request_node_*`, `document_*`) показаны в `payload.audit_event_type` |
 
-Проверка привязок против кода:
+Проверка модели:
 
 ```bash
 python3 tools/validate.py examples/regulated-document-qa
-python3 tools/drift.py examples/regulated-document-qa --repo /path/to/source-repo
+python3 tools/drift.py examples/regulated-document-qa
 ```
 
-На 25.10.2026 drift против кода: 0 расхождений (`stale`), все пути, символы, маршруты, узлы графа и таблицы найдены.
+До обезличивания, 25.10.2026, drift против исходного кода давал 0 расхождений (`stale`): все пути, символы, маршруты, узлы графа и таблицы были найдены.
 
 ## Чем этот домен проверяет универсальность ядра
 
-- **Возможности не только MCP.** В regulated-document-qa нет MCP-сервера: возможности — HTTP-маршруты, узлы LangGraph, функции и CLI. Ядро этого не знает: `kind` — перечисление, транспорт — данные.
-- **Условный гейт.** GxP-гейт срабатывает не всегда, а по вердикту судьи. В ядре это `human_gate.condition` + ограничение `C001` с `enforcement=gate`.
+- **Возможности не только MCP.** В regulated-document-qa нет MCP-сервера: возможности — HTTP-маршруты, узлы графа агента, функции и CLI. Ядро этого не знает: `kind` — перечисление, транспорт — данные.
+- **Условный гейт.** Гейт качества срабатывает не всегда, а по вердикту судьи. В ядре это `human_gate.condition` + ограничение `C001` с `enforcement=gate`.
 - **Очередь человека как проекция.** `fallback_queue` — это проекция «ожидающих гейтов» (HumanGateRequested без HumanGateResolved); в ядре очередь не называется «экспертной».
 - **Производное состояние.** `request_trees.status` вычисляется из узлов (`_derive_request_status`) — в ядре флаг `derived_state`.
 - **Четыре глаза.** Правило «автор не согласует своё» — ограничение `pre_check` на возможность, а не особенность ядра.
@@ -49,10 +49,10 @@ python3 tools/drift.py examples/regulated-document-qa --repo /path/to/source-rep
 
 ## Не подтверждено (помечено в данных)
 
-- `run_ingest_pass` — скрипт полного прохода (`scripts/index_dossier.py`, `ingest_one_pass.py`) лежит вне `src` и в рамках задачи не открывался; в `src` есть `tasks/ingest_task.py`. Статус привязки `unconfirmed`.
+- `run_ingest_pass` — скрипт полного прохода (`scripts/index_main.py`, `ingest_one_pass.py`) лежит вне `src` и в рамках задачи не открывался; в `src` есть `tasks/ingest_task.py`. Статус привязки `unconfirmed`.
 - `notify_review_status` — код webhook-уведомления есть (`db/fallback_notify.py`), по умолчанию выключен; подключённый приёмник не подтверждён. Статус `stub`.
-- Таблица `fallback_events` из `docs/architecture/flows/audit-flow.mmd` в моделях отсутствует — действия эксперта пишутся в `chat_audit_events`. Статус `unconfirmed`.
-- Действие `escalate` (эскалация на тимлида) из `fallback-flow.mmd` в маршрутах `/fallback/*` отсутствует (есть claim/save/answer/reject/reopen) — в пример не включено.
-- `C007` «досье не покидают контур» — открытое решение D-LLM-HOSTING в `docs/architecture/system-spec.md`; записано как `unconfirmed`, `enforcement=audit_only`.
+- Таблица `fallback_events` из архитектурной схемы аудита в моделях отсутствует — действия эксперта пишутся в `chat_audit_events`. Статус `unconfirmed`.
+- Действие `escalate` (эскалация на тимлида) из архитектурной схемы очереди в маршрутах `/fallback/*` отсутствует (есть claim/save/answer/reject/reopen) — в пример не включено.
+- `C007` «документы корпуса не покидают контур» — открытое архитектурное решение SPEC-D1; записано как `unconfirmed`, `enforcement=audit_only`.
 - Имя флага HyDE (`HYDE_ENABLED`) — по функции `hyde_enabled()`, точное имя переменной окружения не сверялось.
-- Документ `backend-architecture.md` называет префикс `/api/admin`; в коде `prefix="/admin"` (прокси срезает `/api`). В примере — как в коде.
+- Архитектурная документация называет префикс `/api/admin`; в коде `prefix="/admin"` (прокси срезает `/api`). В примере — как в коде.

@@ -21,7 +21,7 @@
       },
       "evidence": "code",
       "verified_at": "2026-10-25",
-      "notes": "Также /upload/stream, /upload/async, /upload/dossier-pdf, /upload/foundation*."
+      "notes": "Также /upload/stream, /upload/async, /upload/primary-pdf."
     },
     {
       "capability_id": "decompose_request",
@@ -83,23 +83,23 @@
       "status": "implemented",
       "kind": "function",
       "location": {
-        "path": "agent/gxp_gate.py",
+        "path": "agent/quality_gate.py",
         "symbol": "evaluate_gate"
       },
-      "feature_flag": "GXP_VALIDATION_GATE_ENABLED",
+      "feature_flag": "QUALITY_GATE_ENABLED",
       "evidence": "code",
       "verified_at": "2026-10-25",
-      "notes": "Детерминированное решение по трём оценкам reflect-узла; порог GXP_VALIDATION_THRESHOLD (0.7), нижняя граница критерия 0.6 (SPEC-G1)."
+      "notes": "Детерминированное решение по трём оценкам reflect-узла; порог QUALITY_THRESHOLD (0.7), нижняя граница критерия 0.6 (SPEC-G1)."
     },
     {
       "capability_id": "judge_answer",
       "status": "implemented",
       "kind": "llm_step",
       "location": {
-        "path": "validation/gxp_validator.py",
+        "path": "validation/quality_judge.py",
         "symbol": "validate_response"
       },
-      "feature_flag": "GXP_GATE_ENABLED",
+      "feature_flag": "JUDGE_GATE_ENABLED",
       "evidence": "code",
       "verified_at": "2026-10-25",
       "notes": "Вторая реализация судьи (validation/gate.py apply_gate) — для чат-эндпоинта; оркестратор validation/gate.py."
@@ -326,12 +326,12 @@
       "kind": "graph_node",
       "location": {
         "path": "agent/graph.py",
-        "graph_node": "sgr_search"
+        "graph_node": "evidence_search"
       },
       "feature_flag": "USE_INTENT_SEARCH",
       "evidence": "code",
       "verified_at": "2026-10-25",
-      "notes": "Узел подменяется стратегией: intent-aware (make_intent_aware_search_node), SGR (run_agentic_retrieval), legacy search_dossier+rerank_bm25."
+      "notes": "Узел подменяется стратегией: intent-aware (make_intent_aware_search_node), агентный поиск (run_agentic_retrieval), legacy search_main+rerank_bm25."
     },
     {
       "capability_id": "retrieve_evidence",
@@ -393,7 +393,7 @@
       "feature_flag": "HUMAN_FALLBACK_ENABLED",
       "evidence": "code",
       "verified_at": "2026-10-25",
-      "notes": "Вызывается из agent/gxp_gate.py enqueue_failed_to_fallback / enqueue_no_answer_to_fallback."
+      "notes": "Вызывается из agent/quality_gate.py enqueue_failed_to_fallback / enqueue_no_answer_to_fallback."
     },
     {
       "capability_id": "claim_review_item",
@@ -493,7 +493,7 @@
       },
       "evidence": "code",
       "verified_at": "2026-10-25",
-      "notes": "Полный проход по S3 — scripts/index_dossier.py (вне root, не сверялся drift-инструментом)."
+      "notes": "Полный проход по хранилищу исходников — scripts/index_main.py (вне root, не сверялся drift-инструментом)."
     },
     {
       "capability_id": "reindex_document",
@@ -539,17 +539,17 @@
       },
       "evidence": "code",
       "verified_at": "2026-10-25",
-      "notes": "Документ backend-architecture.md указывает префикс /api/admin; в коде prefix='/admin' (прокси срезает /api)."
+      "notes": "Документация указывает префикс /api/admin; в коде prefix='/admin' (прокси срезает /api)."
     },
     {
       "capability_id": "run_ingest_pass",
       "status": "unconfirmed",
       "kind": "cli",
       "location": {
-        "command": "python scripts/ingest_one_pass.py / index_dossier.py --event"
+        "command": "python scripts/ingest_one_pass.py / index_main.py --event"
       },
       "evidence": "docs",
-      "notes": "Скрипт прохода лежит вне backend/src (scripts/), в рамках задачи не открывался; в src есть обёртка tasks/ingest_task.py. Журнал — ingest_events (D-MEASURE)."
+      "notes": "Скрипт прохода лежит вне backend/src (scripts/), в рамках задачи не открывался; в src есть обёртка tasks/ingest_task.py. Журнал — ingest_events (SPEC-D2)."
     },
     {
       "capability_id": "read_ingest_status",
@@ -677,17 +677,17 @@
     {
       "name": "chunks",
       "kind": "table",
-      "path": "infrastructure/vector/pgvector_store.py",
+      "path": "infrastructure/vector/vector_store.py",
       "entities": [
         "CorpusDocument"
       ],
-      "notes": "DDL параметризована именем таблицы: chunks (384) / chunks_768 (GTE-768, прод). Коллекции app_dossier_v2_gte, app_regulations_v2, app_user_uploads."
+      "notes": "DDL параметризована именем таблицы: chunks (384) / chunks_768 (основная). Коллекции app_main_v2, app_regulations_v2, app_user_uploads."
     },
     {
       "name": "fallback_events",
       "kind": "table",
       "status": "unconfirmed",
-      "notes": "Упомянута в docs/architecture/flows/audit-flow.mmd как planned; в db/models.py отсутствует — действия эксперта пишутся в chat_audit_events (fallback_*)."
+      "notes": "Упомянута в архитектурной документации как planned; в db/models.py отсутствует — действия эксперта пишутся в chat_audit_events (fallback_*)."
     }
   ],
   "event_sinks": [
@@ -701,7 +701,7 @@
         "chat_deleted",
         "message_created",
         "file_attached",
-        "gxp_validation_run",
+        "quality_check_run",
         "fallback_enqueued",
         "fallback_claimed",
         "fallback_draft_saved",
@@ -722,7 +722,7 @@
         "password_changed",
         "sso_user_provisioned",
         "api_key_created",
-        "drug_registry_changed"
+        "subject_registry_changed"
       ],
       "status": "implemented",
       "notes": "Формат записи: {event_type, chat_id, message_id, user_id, changes[{field,before,after}], meta}. Соответствие базовому контракту события — см. README примера."
@@ -738,7 +738,7 @@
     {
       "id": "lint_python",
       "command": "make lint",
-      "description": "black 26.5.1 + ruff 0.13.0 (пиннутые версии CI), в т.ч. запрет кириллицы в идентификаторах PLC2401/PLC2403",
+      "description": "форматтер и линтер с закреплёнными в CI версиями",
       "stage": "pre_merge"
     },
     {

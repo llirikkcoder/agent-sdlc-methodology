@@ -14,7 +14,7 @@
       "actor": {
         "kind": "human",
         "id": "expert_ivanova",
-        "role": "gxp_expert"
+        "role": "expert"
       },
       "scope": {
         "system_id": "regulated_document_qa",
@@ -148,8 +148,8 @@
       },
       "actor": {
         "kind": "agent",
-        "id": "gxp_judge",
-        "role": "gxp_judge"
+        "id": "quality_judge",
+        "role": "quality_judge"
       },
       "scope": {
         "system_id": "regulated_document_qa",
@@ -182,7 +182,7 @@
       "actor": {
         "kind": "human",
         "id": "expert_ivanova",
-        "role": "gxp_expert"
+        "role": "expert"
       },
       "scope": {
         "system_id": "regulated_document_qa",
@@ -215,7 +215,7 @@
       "actor": {
         "kind": "human",
         "id": "expert_petrov",
-        "role": "gxp_expert"
+        "role": "expert"
       },
       "scope": {
         "system_id": "regulated_document_qa",
@@ -279,8 +279,8 @@
       },
       "actor": {
         "kind": "agent",
-        "id": "gxp_judge",
-        "role": "gxp_judge"
+        "id": "quality_judge",
+        "role": "quality_judge"
       },
       "scope": {
         "system_id": "regulated_document_qa",
@@ -295,7 +295,7 @@
         "compliance": 0.7,
         "average_score": 0.633,
         "passed": false,
-        "audit_event_type": "gxp_validation_run"
+        "audit_event_type": "quality_check_run"
       },
       "metadata": {
         "correlation_id": "chat-77/msg-5e01",
@@ -303,7 +303,7 @@
         "schema_version": "1.0",
         "model": {
           "name": "yandexgpt-lite",
-          "prompt_version": "gxp_judge_v3"
+          "prompt_version": "judge_v3"
         }
       }
     },
@@ -328,8 +328,8 @@
         "constraint_id": "C001"
       },
       "payload": {
-        "reason": "gxp_failed",
-        "approver_role": "gxp_expert",
+        "reason": "quality_failed",
+        "approver_role": "expert",
         "user_shown": "pending_human_message"
       },
       "metadata": {
@@ -359,7 +359,7 @@
         "entity": "ReviewItem"
       },
       "payload": {
-        "reason": "gxp_failed",
+        "reason": "quality_failed",
         "confidence": 0.633,
         "message_id": "msg-5e01",
         "sla_deadline": "2026-10-27T12:00:20Z",
@@ -385,7 +385,7 @@
       "actor": {
         "kind": "human",
         "id": "expert_petrov",
-        "role": "gxp_expert"
+        "role": "expert"
       },
       "scope": {
         "system_id": "regulated_document_qa",
@@ -417,7 +417,7 @@
       "actor": {
         "kind": "human",
         "id": "expert_petrov",
-        "role": "gxp_expert"
+        "role": "expert"
       },
       "scope": {
         "system_id": "regulated_document_qa",
@@ -449,7 +449,7 @@
       "actor": {
         "kind": "human",
         "id": "expert_petrov",
-        "role": "gxp_expert"
+        "role": "expert"
       },
       "scope": {
         "system_id": "regulated_document_qa",

@@ -16,7 +16,7 @@
           "description": "Человекочитаемый код RR-YYYY-NNNNNN"
         },
         {
-          "name": "drug",
+          "name": "subject",
           "type": "string"
         },
         {
@@ -37,7 +37,7 @@
           "type": "string"
         },
         {
-          "name": "drug_class",
+          "name": "subject_class",
           "type": "string"
         },
         {
@@ -256,7 +256,7 @@
           "type": "string"
         },
         {
-          "name": "ctd_sections",
+          "name": "doc_sections",
           "type": "list"
         },
         {
@@ -402,7 +402,7 @@
       ]
     },
     "ReviewItem": {
-      "description": "Элемент очереди проверки человеком: ответ чата, провалившийся на GxP-гейте, низкоуверенный или отсутствующий. Таблица fallback_queue.",
+      "description": "Элемент очереди проверки человеком: ответ чата, провалившийся на гейте качества, низкоуверенный или отсутствующий. Таблица fallback_queue.",
       "identity": "id",
       "attributes": [
         {
@@ -429,14 +429,14 @@
           "type": "string"
         },
         {
-          "name": "drug",
+          "name": "subject",
           "type": "string"
         },
         {
           "name": "reason",
           "type": "string",
           "enum": [
-            "gxp_failed",
+            "quality_failed",
             "low_confidence",
             "no_answer"
           ]
@@ -596,7 +596,7 @@
         {
           "name": "extra",
           "type": "json",
-          "description": "steps, sources, metrics, gxp_status"
+          "description": "steps, sources, metrics, quality_status"
         },
         {
           "name": "created_at",
@@ -605,7 +605,7 @@
       ]
     },
     "CorpusDocument": {
-      "description": "Документ корпуса (набор чанков с одним source). Хранится в pgvector-таблице chunks/chunks_768.",
+      "description": "Документ корпуса (набор чанков с одним source). Хранится в векторной таблице chunks/chunks_768.",
       "identity": "source",
       "attributes": [
         {
@@ -618,7 +618,7 @@
           "type": "string"
         },
         {
-          "name": "drug",
+          "name": "subject",
           "type": "string"
         },
         {
@@ -805,7 +805,7 @@
       ]
     },
     "AnswerRecord": {
-      "description": "Институциональная память: пара вопрос–ответ регулятору (Health Authority Q&R Library). Таблица answer_records.",
+      "description": "Институциональная память: пара вопрос–ответ регулятору (библиотека вопросов и ответов). Таблица answer_records.",
       "identity": "id",
       "attributes": [
         {
@@ -838,7 +838,7 @@
           "type": "string"
         },
         {
-          "name": "drug",
+          "name": "subject",
           "type": "string"
         },
         {
@@ -875,7 +875,7 @@
           "type": "string",
           "enum": [
             "reviewer",
-            "gxp_expert",
+            "expert",
             "admin",
             "inspector"
           ]
@@ -900,7 +900,7 @@
     {
       "name": "JudgeVerdictRecorded",
       "entity": "ChatMessage",
-      "description": "GxP-судья оценил ответ (в коде: chat_audit_events.event_type=gxp_validation_run)."
+      "description": "судья качества оценил ответ (в коде: chat_audit_events.event_type=quality_check_run)."
     },
     {
       "name": "ReviewItemEnqueued",

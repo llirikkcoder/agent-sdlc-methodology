@@ -1,35 +1,35 @@
 {
   "system_id": "regulated_document_qa",
   "spec_version": "0.1.0",
-  "purpose": "Помогать регуляторной команде фармкомпании готовить ответы на запросы регулятора по досье CTD и нормативным актам ЕАЭС: находить подтверждённые источники, собирать черновики, проводить их через GxP-проверку и согласование человеком, вести квалифицируемый журнал аудита.",
+  "purpose": "Помогать экспертной команде готовить ответы на запросы надзорного органа по корпусу регулируемых документов: находить подтверждённые источники, собирать черновики, проводить их через проверку качества и согласование человеком, вести журнал аудита, пригодный для квалификации системы.",
   "goals": [
     { "id": "G001", "statement": "Каждый ответ регулятору собран из согласованных экспертом узлов; ни один узел не согласован автором своего текста.", "metric": "доля узлов approved с approved_by != answer_author = 100%" },
-    { "id": "G002", "statement": "Ответ чата, не прошедший GxP-гейт, никогда не доставляется пользователю как готовый.", "metric": "число сообщений с gxp_status=failed и доставленным текстом ответа = 0" },
+    { "id": "G002", "statement": "Ответ чата, не прошедший гейт качества, никогда не доставляется пользователю как готовый.", "metric": "число сообщений с quality_status=failed и доставленным текстом ответа = 0" },
     { "id": "G003", "statement": "Качество поиска измеряется детерминированными метриками на эталоне, а не вердиктом LLM-судьи.", "metric": "recall@5 на перепривязанном эталоне; целевое значение — не подтверждено (TBD)" }
   ],
   "non_goals": [
     "Система не отправляет ответ регулятору сама: экспорт даёт файл, отправку делает человек вне системы.",
-    "Система не принимает решений о регистрации препарата и не заменяет GxP-эксперта.",
+    "Система не принимает решений по существу запроса и не заменяет эксперта.",
     "Ядро методологии не знает об этом домене: всё здесь — данные примера."
   ],
   "roles": [
     { "id": "reviewer", "kind": "human", "description": "Пользователь: задаёт вопросы в чате, загружает документы. Таблица users.role='reviewer'." },
-    { "id": "gxp_expert", "kind": "human", "description": "GxP-эксперт: ведёт очередь проверки, согласует узлы ответа, удаляет/переиндексирует документы корпуса. users.role='gxp_expert'.", "may_approve": true },
+    { "id": "expert", "kind": "human", "description": "Эксперт: ведёт очередь проверки, согласует узлы ответа, удаляет/переиндексирует документы корпуса. users.role='expert'.", "may_approve": true },
     { "id": "admin", "kind": "human", "description": "Администратор: всё, что эксперт, плюс управление пользователями, ручной запуск индексации. users.role='admin'.", "may_approve": true },
-    { "id": "inspector", "kind": "human", "description": "Аудитор только на чтение: журнал аудита, эталон, отчёты. users.role='inspector' (AS-1861)." },
-    { "id": "rag_agent", "kind": "agent", "description": "Агент LangGraph (agent/graph.py): анализ запроса, поиск, генерация ответа." },
-    { "id": "gxp_judge", "kind": "agent", "description": "LLM-судья GxP (validation/gxp_validator.py + agent/gxp_gate.py): оценивает citation_accuracy, completeness, compliance; решение гейта считается детерминированно." },
+    { "id": "inspector", "kind": "human", "description": "Аудитор только на чтение: журнал аудита, эталон, отчёты. users.role='inspector' (SPEC-A1)." },
+    { "id": "rag_agent", "kind": "agent", "description": "Граф агента (agent/graph.py): анализ запроса, поиск, генерация ответа." },
+    { "id": "quality_judge", "kind": "agent", "description": "LLM-судья качества (validation/quality_judge.py + agent/quality_gate.py): оценивает citation_accuracy, completeness, compliance; решение гейта считается детерминированно." },
     { "id": "ingest_worker", "kind": "system", "description": "Фоновый проход индексации (tasks/ingest_task.py, scripts ingest_one_pass): парсинг, чанкинг, эмбеддинг, запись." },
     { "id": "scheduler", "kind": "system", "description": "Планировщик (cron), запускающий проходы индексации; пишет triggered_by='cron' в ingest_events." }
   ],
   "hard_constraints": [
     {
       "id": "C001",
-      "rule": "Ответ, не прошедший GxP-гейт (среднее трёх оценок < 0.7 или любая оценка < 0.6), не показывается пользователю как готовый: вместо текста — уведомление о передаче эксперту, сам ответ — в очередь проверки.",
+      "rule": "Ответ, не прошедший гейт качества (среднее трёх оценок < 0.7 или любая оценка < 0.6), не показывается пользователю как готовый: вместо текста — уведомление о передаче эксперту, сам ответ — в очередь проверки.",
       "severity": "critical",
       "enforcement": "gate",
       "applies_to": { "capabilities": ["deliver_chat_answer"], "processes": ["answer_chat_question"] },
-      "source": "agent/gxp_gate.py (SPEC-G1, SPEC-P99), validation/gate.py PENDING_HUMAN_MESSAGE",
+      "source": "agent/quality_gate.py (SPEC-G1, SPEC-P99), validation/gate.py PENDING_HUMAN_MESSAGE",
       "status": "confirmed"
     },
     {
@@ -47,21 +47,21 @@
       "severity": "critical",
       "enforcement": "post_check",
       "applies_to": {},
-      "source": "db/models.py ChatAuditEvent (AS-1624)",
+      "source": "db/models.py ChatAuditEvent (SPEC-A2)",
       "status": "confirmed"
     },
     {
       "id": "C004",
-      "rule": "Клинические приложения с данными пациентского уровня (§16) не индексируются и не хранятся в корпусе.",
+      "rule": "Приложения с персональными данными субъектов не индексируются и не хранятся в корпусе.",
       "severity": "high",
       "enforcement": "pre_check",
       "applies_to": { "capabilities": ["index_document"], "entities": ["CorpusDocument"] },
-      "source": "ingest/pii_exclusion.py is_clinical_appendix, ingest/stages.py PII_SKIP_REASON (SPEC-P1)",
+      "source": "ingest/pii_exclusion.py is_restricted_appendix, ingest/stages.py PII_SKIP_REASON (SPEC-P1)",
       "status": "confirmed"
     },
     {
       "id": "C005",
-      "rule": "Удаление документа из корпуса доступно только ролям gxp_expert и admin и всегда оставляет запись аудита document_deleted.",
+      "rule": "Удаление документа из корпуса доступно только ролям expert и admin и всегда оставляет запись аудита document_deleted.",
       "severity": "high",
       "enforcement": "gate",
       "applies_to": { "capabilities": ["delete_corpus_document"] },
@@ -70,20 +70,20 @@
     },
     {
       "id": "C006",
-      "rule": "GxP-действия (декомпозиция письма, согласование и экспорт ответа, работа с очередью проверки) доступны только ролям gxp_expert и admin.",
+      "rule": "Экспертные действия (декомпозиция письма, согласование и экспорт ответа, работа с очередью проверки) доступны только ролям expert и admin.",
       "severity": "high",
       "enforcement": "pre_check",
       "applies_to": { "processes": ["prepare_regulator_response", "review_queue_item"] },
-      "source": "api/routers/prepare.py и fallback_queue.py: require_expert на уровне роутера (AS-1846, AS-1802)",
+      "source": "api/routers/prepare.py и fallback_queue.py: require_expert на уровне роутера (SPEC-A3, SPEC-A4)",
       "status": "confirmed"
     },
     {
       "id": "C007",
-      "rule": "Содержимое досье не покидает контур организации (не отправляется внешним LLM без обезличивания).",
+      "rule": "Содержимое корпуса не покидает контур организации (не отправляется внешним LLM без обезличивания).",
       "severity": "critical",
       "enforcement": "audit_only",
       "applies_to": { "capabilities": ["generate_answer", "generate_leaf_draft", "judge_answer"] },
-      "source": "docs/architecture/system-spec.md D-LLM-HOSTING — требование обсуждается; в коде генерация идёт через внешнего провайдера, ANONYMIZE_FOR_LLM опционален",
+      "source": "архитектурное решение SPEC-D1 — требование обсуждается; в коде генерация идёт через внешнего провайдера, ANONYMIZE_FOR_LLM опционален",
       "status": "unconfirmed"
     }
   ]
