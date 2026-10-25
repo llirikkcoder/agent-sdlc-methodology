@@ -47,7 +47,7 @@
 | `EntityTransitioned` | сущность сменила состояние | `entity`; `payload.from`, `payload.to` (переход должен существовать в слое 2) |
 | `ProcessCompleted` / `ProcessAborted` | экземпляр завершён / прерван | `process_id` |
 | `CapabilityMissing` | Static Guard не нашёл работающей возможности для шага | `step_id`, `capability_id`; `payload.reason` как в drift |
-| `DriftDetected` | плановая drift-проверка нашла расхождения | `payload.holes[]` |
+| `DriftDetected` | плановая drift-проверка нашла расхождения | `payload.holes[]`, `payload.snapshot` (коммит, хэш файлов; ADR-020) |
 
 Доменные события (`DraftGenerated`, `ItemShipped`, …) объявляются в `domain_events` слоя 2 с привязкой к сущности и используются в `emits` шагов. Всё остальное — в `payload` базовых типов, а не новыми типами: каталог растёт только когда появляется новый **класс** факта, а не новый домен.
 

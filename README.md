@@ -50,9 +50,11 @@ softoscope/                    — эталонная реализация (stdl
 tests/                         — тесты ядра на синтетической модели (make test)
 tools/
   validate.py                  — схемы + межслойные правила (ссылки, гейты, события)
-  drift.py                     — слои 3/4 против слоя 5 и против кода (--repo)
+  drift.py                     — слои 3/4 против слоя 5 и против кода (--repo): stale, обратный дрейф unmodeled, снимок
   check_core_purity.py         — доменные слова в ядре
   holes_to_tasks.py            — дыры drift и журнала → задачи трекера (только вывод)
+  code_inventory.py            — реестр кода через ast + снимок исходника (для drift --repo)
+  draft_bindings.py            — черновик слоя 5 по реестру: кандидаты привязок, все planned
   _schema_lite.py              — встроенный валидатор подмножества JSON Schema (без зависимостей)
 Makefile                       — make check
 .anchor/gates                  — гейты слияния этого репозитория (anchor, ADR-019)
@@ -65,7 +67,7 @@ Makefile                       — make check
 ```bash
 make check                                   # валидация (два валидатора), drift всех примеров, чистота ядра, тесты
 make drift-strict                            # runtime Static Guard: planned-привязки и unconfirmed critical-ограничения — ERROR
-make test                                    # 35 тестов ядра (входит в make check)
+make test                                    # 41 тест ядра (входит в make check)
 make drift-anchor ANCHOR_REPO=/путь/к/anchor  # пример agent-delivery против живого кода anchor
 python3 tools/drift.py <модель> --json | python3 tools/holes_to_tasks.py - --emit bd   # дыры → команды трекера
 make demo                                    # runtime на примере ai-office с моками: блокировка, гейт, человеческий шаг
@@ -73,6 +75,7 @@ python3 -m softoscope.mcp_server examples/ai-office-sales   # MCP-сервер s
 python3 tools/validate.py examples/regulated-document-qa
 python3 tools/drift.py examples/ai-office-sales --strict
 python3 tools/drift.py <модель> --repo /path/to/source-repo   # сверка привязок с кодом, только чтение
+python3 tools/draft_bindings.py <модель> --repo /path/to/source-repo   # черновик слоя 5 для новой системы
 ```
 
 Требуется Python 3.11+. Пакет `jsonschema` необязателен: без него работает встроенный валидатор.
@@ -84,7 +87,7 @@ python3 tools/drift.py <модель> --repo /path/to/source-repo   # сверк
 3. **Слой 2.** Сущности с идентификатором; у тех, что живут жизненным циклом, — состояния и переходы. Отметьте `sensitive` атрибуты.
 4. **Слой 3.** Процессы по триггерам; шаги с исполнителем и ролью; на шагах агента — `capability_id` и `transition`. Запустите `tools/validate.py`: он скажет, где обязателен гейт.
 5. **Слой 4.** Опишите каждую возможность, на которую сослались шаги: `kind`, `effect`, `idempotency`, роли, контракт. Необратимое — `human_gate_required: true`.
-6. **Слой 5.** Привяжите возможности к коду или инструментам, с `evidence` и датой. Нет реализации — `status: planned`, не выдумывайте.
+6. **Слой 5.** Привяжите возможности к коду или инструментам, с `evidence` и датой. Нет реализации — `status: planned`, не выдумывайте. Для старта по существующему коду — `tools/draft_bindings.py`: он предложит кандидатов, подтверждаете вы.
 7. **События.** Составьте `events.sample.json` на один сквозной сценарий с гейтом и нарушением ограничения; валидатор проверит ссылки и чувствительные поля.
 8. **Прогоните** `tools/drift.py <dir>` и, если есть код, `--repo`. Дыры — это задачи на цикл поставки, а не повод править модель под код.
 9. **README примера**: откуда взято, что не подтверждено, чем домен проверяет ядро. Если для домена понадобилось новое поле в `schemas/` — остановитесь и проверьте, не доменное ли оно (`make purity`).
@@ -93,7 +96,7 @@ python3 tools/drift.py <модель> --repo /path/to/source-repo   # сверк
 
 - `make check`: обе валидации (с `jsonschema` 4.26 и встроенным валидатором) дают одинаковый результат — 0 ошибок на всех трёх примерах; drift без ошибок (WARN: намеренные дыры `send_offer`/`send_invoice`, неподтверждённое C007); чистота ядра — 0 доменных слов.
 - `make drift-strict` на regulated-document-qa показывает блокировку: C007 (critical, unconfirmed) → ERROR для двух процессов (ADR-017).
-- `make test`: 35 тестов — уровни `unconfirmed` в `--strict` (ADR-017), дыры → задачи, порог и `AutoApprovedByRule`, гейт и роли, Static Guard (planned, unconfirmed, нет исполнителя), retry/escalate/abort, `llm_step` без модели, маскирование, пересборка проекций из JSONL, MCP по stdio.
+- `make test`: 41 тест — реестр кода и обратный дрейф на синтетическом репозитории (ADR-020), уровни `unconfirmed` в `--strict` (ADR-017), дыры → задачи, порог и `AutoApprovedByRule`, гейт и роли, Static Guard (planned, unconfirmed, нет исполнителя), retry/escalate/abort, `llm_step` без модели, маскирование, пересборка проекций из JSONL, MCP по stdio.
 - Негативные тесты по ADR-010/011/015: условный гейт на необратимом без порога, `system_level` без гейта, событие `llm_step` без `metadata.model` — ловятся валидатором.
 - `drift.py examples/regulated-document-qa --repo <закрытый код>` на 25.10.2026: 0 расхождений с кодом; негативный тест с подменёнными символами, маршрутом, узлом графа, путём и классом таблицы — все пойманы. Пример обезличен: имена репозитория, модулей и таблиц заменены, поэтому в этом репозитории сверка с кодом не воспроизводится.
 - Негативный тест валидатора: шаг агента на необратимой возможности без гейта и ссылка на несуществующую возможность — обе ошибки пойманы обоими валидаторами.

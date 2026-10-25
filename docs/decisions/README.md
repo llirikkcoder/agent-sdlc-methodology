@@ -22,4 +22,5 @@
 | [ADR-016](ADR-016-imports-between-systems.md) | Q7. `imports` между системами |
 | [ADR-017](ADR-017-unconfirmed-by-severity.md) | Q8. `unconfirmed` — градация по severity, блок в Static Guard |
 | [ADR-018](ADR-018-reference-implementation-boundaries.md) | Границы эталонной реализации `softoscope/`: stdlib, исполнители снаружи, журнал — истина |
+| [ADR-020](ADR-020-code-inventory-and-reverse-drift.md) | Реестр кода через `ast`, обратный дрейф `unmodeled` (только WARN), снимок исходника, черновик слоя 5 |
 | [ADR-019](ADR-019-agent-merges-by-gates.md) | Агент-разработчик сливает сам по гейтам; человек — в постановке и в исключениях (заменяет ADR-013 п. 3) |
