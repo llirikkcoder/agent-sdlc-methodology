@@ -1,0 +1,332 @@
+{
+  "system_id": "equipment_rental",
+  "processes": [
+    {
+      "process_id": "booking_request",
+      "name": "Бронирование",
+      "description": "Запрос брони: проверить даты, зарезервировать единицу, подтвердить бронь.",
+      "trigger": {
+        "kind": "human_request",
+        "description": "Арендатор просит забронировать единицу на даты."
+      },
+      "aggregate_entity": "Booking",
+      "steps": [
+        {
+          "step_id": "check",
+          "name": "Проверить свободные даты",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "check_availability"
+        },
+        {
+          "step_id": "reserve",
+          "name": "Зарезервировать единицу",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "reserve_equipment",
+          "transition": {
+            "entity": "Equipment",
+            "from": "available",
+            "to": "reserved"
+          },
+          "on_failure": "escalate"
+        },
+        {
+          "step_id": "confirm",
+          "name": "Подтвердить бронь",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "confirm_booking",
+          "transition": {
+            "entity": "Booking",
+            "from": "requested",
+            "to": "confirmed"
+          },
+          "emits": [
+            "BookingConfirmed"
+          ]
+        }
+      ]
+    },
+    {
+      "process_id": "equipment_issue",
+      "name": "Выдача оборудования",
+      "description": "Выдача: залог, акт, единица в аренде.",
+      "trigger": {
+        "kind": "human_request",
+        "description": "Арендатор пришёл за оборудованием по брони."
+      },
+      "aggregate_entity": "Booking",
+      "steps": [
+        {
+          "step_id": "deposit",
+          "name": "Принять залог",
+          "actor": "human",
+          "role": "clerk",
+          "capability_id": "take_deposit"
+        },
+        {
+          "step_id": "issue",
+          "name": "Выдать по акту",
+          "actor": "human",
+          "role": "clerk",
+          "capability_id": "issue_equipment",
+          "transition": {
+            "entity": "Booking",
+            "from": "confirmed",
+            "to": "issued"
+          },
+          "emits": [
+            "EquipmentIssued"
+          ]
+        },
+        {
+          "step_id": "rented",
+          "name": "Отметить единицу в аренде",
+          "actor": "system",
+          "role": "scheduler",
+          "capability_id": "mark_rented",
+          "transition": {
+            "entity": "Equipment",
+            "from": "reserved",
+            "to": "rented"
+          }
+        }
+      ]
+    },
+    {
+      "process_id": "rental_return",
+      "name": "Возврат без повреждений",
+      "description": "Возврат без повреждений: приём, осмотр, оценка, возврат залога, единица в парк, закрытие.",
+      "trigger": {
+        "kind": "human_request",
+        "description": "Арендатор вернул оборудование."
+      },
+      "aggregate_entity": "Booking",
+      "steps": [
+        {
+          "step_id": "accept",
+          "name": "Принять оборудование",
+          "actor": "human",
+          "role": "clerk",
+          "capability_id": "accept_return",
+          "transition": {
+            "entity": "Booking",
+            "from": "issued",
+            "to": "returned"
+          }
+        },
+        {
+          "step_id": "to_inspection",
+          "name": "Поставить единицу на осмотр",
+          "actor": "system",
+          "role": "scheduler",
+          "capability_id": "mark_inspection",
+          "transition": {
+            "entity": "Equipment",
+            "from": "rented",
+            "to": "inspection"
+          }
+        },
+        {
+          "step_id": "assess",
+          "name": "Оценить повреждения по фото",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "assess_damage"
+        },
+        {
+          "step_id": "settle",
+          "name": "Вернуть залог",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "refund_deposit",
+          "human_gate": {
+            "required": true,
+            "reason": "constraint",
+            "approver_role": "manager",
+            "constraint_id": "C001",
+            "condition": "Deposit.amount > 50000"
+          },
+          "transition": {
+            "entity": "Deposit",
+            "from": "held",
+            "to": "refunded"
+          },
+          "emits": [
+            "DepositRefunded"
+          ]
+        },
+        {
+          "step_id": "release",
+          "name": "Вернуть единицу в парк",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "return_to_fleet",
+          "transition": {
+            "entity": "Equipment",
+            "from": "inspection",
+            "to": "available"
+          }
+        },
+        {
+          "step_id": "close",
+          "name": "Закрыть аренду",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "close_booking",
+          "transition": {
+            "entity": "Booking",
+            "from": "returned",
+            "to": "closed"
+          }
+        }
+      ]
+    },
+    {
+      "process_id": "damaged_return",
+      "name": "Возврат с повреждением",
+      "description": "Возврат с повреждением: те же шаги, но залог удерживается (всегда через менеджера), единица уходит в ремонт.",
+      "trigger": {
+        "kind": "agent_decision",
+        "description": "Оценка при возврате показала повреждение."
+      },
+      "aggregate_entity": "Booking",
+      "steps": [
+        {
+          "step_id": "accept",
+          "name": "Принять оборудование",
+          "actor": "human",
+          "role": "clerk",
+          "capability_id": "accept_return",
+          "transition": {
+            "entity": "Booking",
+            "from": "issued",
+            "to": "returned"
+          }
+        },
+        {
+          "step_id": "to_inspection",
+          "name": "Поставить единицу на осмотр",
+          "actor": "system",
+          "role": "scheduler",
+          "capability_id": "mark_inspection",
+          "transition": {
+            "entity": "Equipment",
+            "from": "rented",
+            "to": "inspection"
+          }
+        },
+        {
+          "step_id": "assess",
+          "name": "Оценить повреждения по фото",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "assess_damage"
+        },
+        {
+          "step_id": "settle",
+          "name": "Удержать залог",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "withhold_deposit",
+          "human_gate": {
+            "required": true,
+            "reason": "constraint",
+            "approver_role": "manager",
+            "constraint_id": "C004"
+          },
+          "transition": {
+            "entity": "Deposit",
+            "from": "held",
+            "to": "withheld"
+          },
+          "emits": [
+            "DepositWithheld"
+          ]
+        },
+        {
+          "step_id": "release",
+          "name": "Отправить в ремонт",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "send_to_repair",
+          "transition": {
+            "entity": "Equipment",
+            "from": "inspection",
+            "to": "repair"
+          },
+          "emits": [
+            "EquipmentSentToRepair"
+          ]
+        },
+        {
+          "step_id": "close",
+          "name": "Закрыть аренду",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "close_booking",
+          "transition": {
+            "entity": "Booking",
+            "from": "returned",
+            "to": "closed"
+          }
+        }
+      ]
+    },
+    {
+      "process_id": "overdue_check",
+      "name": "Проверка просрочек",
+      "description": "Ежедневная проверка просрочек.",
+      "trigger": {
+        "kind": "schedule",
+        "description": "Каждый день в 10:00."
+      },
+      "aggregate_entity": "Booking",
+      "steps": [
+        {
+          "step_id": "find",
+          "name": "Найти просроченные аренды",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "list_overdue"
+        },
+        {
+          "step_id": "flag",
+          "name": "Поставить задачу менеджеру",
+          "actor": "agent",
+          "role": "rental_agent",
+          "capability_id": "flag_overdue",
+          "emits": [
+            "OverdueFlagged"
+          ]
+        }
+      ]
+    },
+    {
+      "process_id": "repair_cycle",
+      "name": "Возврат из ремонта",
+      "description": "Возврат единицы из ремонта в парк (ещё не согласован с мастерской).",
+      "status": "planned",
+      "trigger": {
+        "kind": "human_request",
+        "description": "Мастер сообщил, что ремонт закончен."
+      },
+      "aggregate_entity": "Equipment",
+      "steps": [
+        {
+          "step_id": "finish",
+          "name": "Принять единицу из ремонта",
+          "actor": "human",
+          "role": "clerk",
+          "capability_id": "finish_repair",
+          "transition": {
+            "entity": "Equipment",
+            "from": "repair",
+            "to": "available"
+          }
+        }
+      ]
+    }
+  ]
+}

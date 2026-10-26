@@ -1,0 +1,139 @@
+{
+  "system_id": "equipment_rental",
+  "spec_version": "0.1.0",
+  "purpose": "Сдавать строительное оборудование в аренду без двойных броней и без споров о залоге: агент бронирует, ведёт возврат и решает по залогу в пределах правил, человек выдаёт, принимает и утверждает крупные и спорные суммы.",
+  "goals": [
+    {
+      "id": "G001",
+      "statement": "Ни одна единица не забронирована дважды на одни даты.",
+      "metric": "число пересекающихся броней = 0"
+    },
+    {
+      "id": "G002",
+      "statement": "Залог крупнее порога и любое удержание проходят через менеджера.",
+      "metric": "число возвратов > 50 000 ₽ и удержаний без решения менеджера = 0"
+    },
+    {
+      "id": "G003",
+      "statement": "Каждая закрытая аренда имеет решение по залогу.",
+      "metric": "доля закрытых аренд без возврата или удержания = 0"
+    }
+  ],
+  "non_goals": [
+    "Система не ведёт бухгалтерию пункта проката.",
+    "Система не ремонтирует оборудование: ремонт — отдельный процесс мастерской."
+  ],
+  "roles": [
+    {
+      "id": "manager",
+      "kind": "human",
+      "description": "Менеджер пункта: утверждает возврат крупного залога и любое удержание, разбирает эскалации.",
+      "may_approve": true
+    },
+    {
+      "id": "clerk",
+      "kind": "human",
+      "description": "Сотрудник выдачи: принимает залог, выдаёт и принимает оборудование по акту."
+    },
+    {
+      "id": "rental_agent",
+      "kind": "agent",
+      "description": "ИИ-агент проката: бронирует, ведёт возврат, оценивает повреждения по фото, предлагает решение по залогу."
+    },
+    {
+      "id": "scheduler",
+      "kind": "system",
+      "description": "Учётная система пункта: статусы единиц и плановые проверки."
+    }
+  ],
+  "hard_constraints": [
+    {
+      "id": "C001",
+      "rule": "Залог больше 50 000 ₽ возвращается только с согласия менеджера.",
+      "severity": "critical",
+      "enforcement": "gate",
+      "applies_to": {
+        "entities": [
+          "Deposit"
+        ],
+        "capabilities": [
+          "refund_deposit"
+        ]
+      },
+      "source": "регламент пункта проката, со слов владельца",
+      "status": "confirmed",
+      "threshold": {
+        "attribute": "Deposit.amount",
+        "operator": ">",
+        "value": 50000,
+        "unit": "RUB"
+      }
+    },
+    {
+      "id": "C002",
+      "rule": "Оборудование выдаётся только по подписанному акту и после внесения залога.",
+      "severity": "critical",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "capabilities": [
+          "issue_equipment"
+        ]
+      },
+      "status": "confirmed"
+    },
+    {
+      "id": "C003",
+      "rule": "Одна единица не бронируется на пересекающиеся даты.",
+      "severity": "critical",
+      "enforcement": "pre_check",
+      "applies_to": {
+        "entities": [
+          "Equipment"
+        ],
+        "capabilities": [
+          "reserve_equipment"
+        ]
+      },
+      "status": "confirmed"
+    },
+    {
+      "id": "C004",
+      "rule": "Удержание залога за повреждение — только с согласия менеджера, при любой сумме.",
+      "severity": "critical",
+      "enforcement": "gate",
+      "applies_to": {
+        "capabilities": [
+          "withhold_deposit"
+        ]
+      },
+      "rationale": "оценка повреждения моделью — подсказка, а не решение (ADR-012)",
+      "status": "confirmed"
+    },
+    {
+      "id": "C005",
+      "rule": "Единица после ремонта возвращается в парк только после проверки мастером.",
+      "severity": "high",
+      "enforcement": "audit_only",
+      "applies_to": {
+        "entities": [
+          "Equipment"
+        ]
+      },
+      "source": "со слов сотрудника выдачи; в регламенте не найдено",
+      "status": "unconfirmed"
+    },
+    {
+      "id": "C006",
+      "rule": "Закрытая аренда имеет решение по залогу: возврат или удержание.",
+      "severity": "medium",
+      "enforcement": "post_check",
+      "applies_to": {
+        "processes": [
+          "rental_return",
+          "damaged_return"
+        ]
+      },
+      "status": "confirmed"
+    }
+  ]
+}

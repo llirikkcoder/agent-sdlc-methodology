@@ -1,0 +1,236 @@
+{
+  "system_id": "equipment_rental",
+  "capabilities": [
+    {
+      "capability_id": "check_availability",
+      "name": "Проверить, свободна ли единица на даты",
+      "kind": "query",
+      "effect": "read",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Equipment",
+        "Booking"
+      ],
+      "inputs": {
+        "equipment_id": "string",
+        "start_date": "date",
+        "end_date": "date"
+      },
+      "outputs": {
+        "available": "boolean"
+      },
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "reserve_equipment",
+      "name": "Зарезервировать единицу",
+      "kind": "function",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Equipment"
+      ],
+      "idempotency": "key",
+      "constraints": [
+        "C003"
+      ]
+    },
+    {
+      "capability_id": "confirm_booking",
+      "name": "Подтвердить бронь",
+      "kind": "function",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Booking"
+      ],
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "refund_deposit",
+      "name": "Вернуть залог",
+      "kind": "external_call",
+      "effect": "write_irreversible",
+      "human_gate_required": true,
+      "touches_entities": [
+        "Deposit"
+      ],
+      "inputs": {
+        "deposit_id": "string",
+        "amount": "number"
+      },
+      "idempotency": "key",
+      "external_side_effects": true,
+      "constraints": [
+        "C001"
+      ]
+    },
+    {
+      "capability_id": "take_deposit",
+      "name": "Принять залог",
+      "kind": "ui_action",
+      "effect": "write_compensable",
+      "compensation": {
+        "capability_id": "refund_deposit"
+      },
+      "human_gate_required": false,
+      "allowed_roles": [
+        "clerk"
+      ],
+      "touches_entities": [
+        "Deposit"
+      ],
+      "idempotency": "key"
+    },
+    {
+      "capability_id": "issue_equipment",
+      "name": "Выдать оборудование по акту",
+      "kind": "ui_action",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "allowed_roles": [
+        "clerk"
+      ],
+      "touches_entities": [
+        "Booking"
+      ],
+      "idempotency": "natural",
+      "constraints": [
+        "C002"
+      ]
+    },
+    {
+      "capability_id": "mark_rented",
+      "name": "Отметить единицу как сданную",
+      "kind": "function",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Equipment"
+      ],
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "accept_return",
+      "name": "Принять оборудование по акту",
+      "kind": "ui_action",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "allowed_roles": [
+        "clerk"
+      ],
+      "touches_entities": [
+        "Booking"
+      ],
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "mark_inspection",
+      "name": "Поставить единицу на осмотр",
+      "kind": "function",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Equipment"
+      ],
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "assess_damage",
+      "name": "Оценить повреждения по фото",
+      "description": "Модель даёт оценку; решение по залогу принимает правило и человек (ADR-012).",
+      "kind": "llm_step",
+      "effect": "read",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Inspection"
+      ],
+      "outputs": {
+        "damage_score": "number",
+        "damage_cost": "number",
+        "verdict": "string"
+      },
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "withhold_deposit",
+      "name": "Удержать залог",
+      "kind": "function",
+      "effect": "write_irreversible",
+      "human_gate_required": true,
+      "touches_entities": [
+        "Deposit"
+      ],
+      "idempotency": "key",
+      "constraints": [
+        "C004"
+      ]
+    },
+    {
+      "capability_id": "return_to_fleet",
+      "name": "Вернуть единицу в парк",
+      "kind": "function",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Equipment"
+      ],
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "send_to_repair",
+      "name": "Отправить единицу в ремонт",
+      "kind": "function",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Equipment"
+      ],
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "close_booking",
+      "name": "Закрыть аренду",
+      "kind": "function",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Booking"
+      ],
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "list_overdue",
+      "name": "Найти просроченные аренды",
+      "kind": "query",
+      "effect": "read",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Booking"
+      ],
+      "idempotency": "natural"
+    },
+    {
+      "capability_id": "flag_overdue",
+      "name": "Поставить менеджеру задачу по просрочке",
+      "kind": "function",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Booking"
+      ],
+      "idempotency": "key"
+    },
+    {
+      "capability_id": "finish_repair",
+      "name": "Принять единицу из ремонта",
+      "kind": "ui_action",
+      "effect": "write_reversible",
+      "human_gate_required": false,
+      "touches_entities": [
+        "Equipment"
+      ],
+      "idempotency": "natural"
+    }
+  ]
+}

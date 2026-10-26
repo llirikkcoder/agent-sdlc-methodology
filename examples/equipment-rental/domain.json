@@ -1,0 +1,320 @@
+{
+  "system_id": "equipment_rental",
+  "entities": {
+    "Equipment": {
+      "description": "Единица оборудования в парке пункта.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "model_name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "daily_rate",
+          "type": "number",
+          "description": "Цена суток аренды, ₽"
+        }
+      ],
+      "states": [
+        "available",
+        "reserved",
+        "rented",
+        "inspection",
+        "repair",
+        "retired"
+      ],
+      "initial_state": "available",
+      "terminal_states": [
+        "retired"
+      ],
+      "transitions": [
+        {
+          "from": "available",
+          "to": "reserved",
+          "actor_kind": "agent",
+          "reversible": true
+        },
+        {
+          "from": "reserved",
+          "to": "available",
+          "actor_kind": "agent",
+          "reversible": true
+        },
+        {
+          "from": "reserved",
+          "to": "rented",
+          "actor_kind": "system"
+        },
+        {
+          "from": "rented",
+          "to": "inspection",
+          "actor_kind": "system"
+        },
+        {
+          "from": "inspection",
+          "to": "available",
+          "actor_kind": "agent"
+        },
+        {
+          "from": "inspection",
+          "to": "repair",
+          "actor_kind": "agent"
+        },
+        {
+          "from": "repair",
+          "to": "available",
+          "actor_kind": "human",
+          "guard": "C005"
+        },
+        {
+          "from": "available",
+          "to": "retired",
+          "actor_kind": "human",
+          "reversible": false
+        }
+      ]
+    },
+    "Booking": {
+      "description": "Аренда: от запроса до закрытия с решением по залогу.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "equipment_id",
+          "type": "ref",
+          "required": true,
+          "ref": "Equipment"
+        },
+        {
+          "name": "renter_phone",
+          "type": "string",
+          "sensitive": true
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "required": true
+        }
+      ],
+      "states": [
+        "requested",
+        "confirmed",
+        "issued",
+        "returned",
+        "closed",
+        "cancelled"
+      ],
+      "initial_state": "requested",
+      "terminal_states": [
+        "closed",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from": "requested",
+          "to": "confirmed",
+          "actor_kind": "agent"
+        },
+        {
+          "from": "requested",
+          "to": "cancelled",
+          "actor_kind": "agent",
+          "reversible": false,
+          "guard": "C003"
+        },
+        {
+          "from": "confirmed",
+          "to": "cancelled",
+          "actor_kind": "human",
+          "reversible": false
+        },
+        {
+          "from": "confirmed",
+          "to": "issued",
+          "actor_kind": "human",
+          "guard": "C002"
+        },
+        {
+          "from": "issued",
+          "to": "returned",
+          "actor_kind": "human"
+        },
+        {
+          "from": "returned",
+          "to": "closed",
+          "actor_kind": "agent",
+          "reversible": false,
+          "guard": "C006"
+        }
+      ],
+      "relations": [
+        {
+          "name": "equipment",
+          "target": "Equipment",
+          "cardinality": "one"
+        },
+        {
+          "name": "deposit",
+          "target": "Deposit",
+          "cardinality": "one"
+        },
+        {
+          "name": "inspection",
+          "target": "Inspection",
+          "cardinality": "one"
+        }
+      ],
+      "invariants": [
+        "даты брони одной единицы не пересекаются (C003)",
+        "закрытая аренда имеет решение по залогу (C006)"
+      ]
+    },
+    "Deposit": {
+      "description": "Залог по аренде.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "booking_id",
+          "type": "ref",
+          "required": true,
+          "ref": "Booking"
+        },
+        {
+          "name": "amount",
+          "type": "number",
+          "required": true,
+          "description": "Сумма залога, ₽; порог C001 = 50 000"
+        }
+      ],
+      "states": [
+        "held",
+        "refunded",
+        "withheld"
+      ],
+      "initial_state": "held",
+      "terminal_states": [
+        "refunded",
+        "withheld"
+      ],
+      "transitions": [
+        {
+          "from": "held",
+          "to": "refunded",
+          "actor_kind": "agent",
+          "reversible": false,
+          "guard": "C001"
+        },
+        {
+          "from": "held",
+          "to": "withheld",
+          "actor_kind": "agent",
+          "reversible": false,
+          "guard": "C004"
+        }
+      ]
+    },
+    "Inspection": {
+      "description": "Осмотр при возврате: фото, оценка повреждения моделью, вердикт.",
+      "identity": "id",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "booking_id",
+          "type": "ref",
+          "required": true,
+          "ref": "Booking"
+        },
+        {
+          "name": "damage_score",
+          "type": "number",
+          "description": "0–1, оценка модели по фото"
+        },
+        {
+          "name": "damage_cost",
+          "type": "number",
+          "description": "Оценка стоимости ремонта, ₽"
+        },
+        {
+          "name": "verdict",
+          "type": "string",
+          "enum": [
+            "ok",
+            "damaged"
+          ]
+        }
+      ]
+    }
+  },
+  "domain_events": [
+    {
+      "name": "BookingConfirmed",
+      "entity": "Booking",
+      "description": "Бронь подтверждена, единица зарезервирована."
+    },
+    {
+      "name": "EquipmentIssued",
+      "entity": "Booking",
+      "description": "Оборудование выдано по акту."
+    },
+    {
+      "name": "DepositRefunded",
+      "entity": "Deposit",
+      "description": "Залог возвращён."
+    },
+    {
+      "name": "DepositWithheld",
+      "entity": "Deposit",
+      "description": "Залог удержан за повреждение."
+    },
+    {
+      "name": "EquipmentSentToRepair",
+      "entity": "Equipment",
+      "description": "Единица отправлена в ремонт."
+    },
+    {
+      "name": "OverdueFlagged",
+      "entity": "Booking",
+      "description": "Аренда просрочена, менеджеру поставлена задача."
+    }
+  ]
+}

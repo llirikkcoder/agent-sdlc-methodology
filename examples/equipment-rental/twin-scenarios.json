@@ -1,0 +1,83 @@
+{
+  "booking_request": {
+    "inputs": {
+      "equipment_id": "eq-7",
+      "start_date": "2026-11-02",
+      "end_date": "2026-11-05"
+    },
+    "outputs": {
+      "check_availability": {
+        "available": true
+      }
+    }
+  },
+  "equipment_issue": {
+    "inputs": {
+      "equipment_id": "eq-7",
+      "deposit_id": "dep-1"
+    },
+    "human_outputs": {
+      "deposit": {
+        "amount": 30000
+      }
+    }
+  },
+  "rental_return": {
+    "inputs": {
+      "equipment_id": "eq-7",
+      "deposit_id": "dep-1"
+    },
+    "entities": {
+      "Deposit:dep-1": {
+        "amount": 30000
+      }
+    },
+    "outputs": {
+      "assess_damage": {
+        "damage_score": 0.05,
+        "damage_cost": 0,
+        "verdict": "ok"
+      }
+    }
+  },
+  "damaged_return": {
+    "inputs": {
+      "equipment_id": "eq-9",
+      "deposit_id": "dep-2"
+    },
+    "entities": {
+      "Deposit:dep-2": {
+        "amount": 80000
+      }
+    },
+    "outputs": {
+      "assess_damage": {
+        "damage_score": 0.82,
+        "damage_cost": 41000,
+        "verdict": "damaged"
+      }
+    },
+    "decisions": {
+      "settle": "approved"
+    }
+  },
+  "overdue_check": {},
+  "equipment_issue@b-2": {
+    "inputs": {
+      "equipment_id": "eq-9",
+      "deposit_id": "dep-2"
+    }
+  },
+  "booking_request@b-2": {
+    "inputs": {
+      "equipment_id": "eq-9",
+      "start_date": "2026-11-03",
+      "end_date": "2026-11-04"
+    },
+    "outputs": {
+      "check_availability": {
+        "available": true
+      }
+    }
+  }
+}

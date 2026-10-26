@@ -1,0 +1,111 @@
+{
+  "system_id": "equipment_rental",
+  "repository": {
+    "name": "equipment_rental",
+    "inspected_at": "2026-10-27"
+  },
+  "bindings": [
+    {
+      "capability_id": "check_availability",
+      "status": "planned",
+      "kind": "query",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "reserve_equipment",
+      "status": "planned",
+      "kind": "function",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "confirm_booking",
+      "status": "planned",
+      "kind": "function",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "refund_deposit",
+      "status": "planned",
+      "kind": "external_call",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "take_deposit",
+      "status": "planned",
+      "kind": "ui_action",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "issue_equipment",
+      "status": "planned",
+      "kind": "ui_action",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "mark_rented",
+      "status": "planned",
+      "kind": "function",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "accept_return",
+      "status": "planned",
+      "kind": "ui_action",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "mark_inspection",
+      "status": "planned",
+      "kind": "function",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "assess_damage",
+      "status": "planned",
+      "kind": "llm_step",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "withhold_deposit",
+      "status": "planned",
+      "kind": "function",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "return_to_fleet",
+      "status": "planned",
+      "kind": "function",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "send_to_repair",
+      "status": "planned",
+      "kind": "function",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "close_booking",
+      "status": "planned",
+      "kind": "function",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "list_overdue",
+      "status": "planned",
+      "kind": "query",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "flag_overdue",
+      "status": "planned",
+      "kind": "function",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    },
+    {
+      "capability_id": "finish_repair",
+      "status": "planned",
+      "kind": "ui_action",
+      "evidence": "процесс ведётся вручную, автоматизации нет (2026-10-27)"
+    }
+  ]
+}

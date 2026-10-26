@@ -1,0 +1,3261 @@
+{
+  "events": [
+    {
+      "event_id": "532b0796-25e8-4510-9d99-2f385b361da2",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "twin"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request"
+      },
+      "payload": {
+        "aggregate_id": "b-1",
+        "inputs": {
+          "equipment_id": "eq-7",
+          "start_date": "2026-11-02",
+          "end_date": "2026-11-05"
+        },
+        "plan": [
+          {
+            "step_id": "check",
+            "actor": "agent",
+            "capability_id": "check_availability",
+            "effect": "read",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": null
+          },
+          {
+            "step_id": "reserve",
+            "actor": "agent",
+            "capability_id": "reserve_equipment",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Equipment",
+              "from": "available",
+              "to": "reserved"
+            }
+          },
+          {
+            "step_id": "confirm",
+            "actor": "agent",
+            "capability_id": "confirm_booking",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Booking",
+              "from": "requested",
+              "to": "confirmed"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-1",
+        "schema_version": "1.0"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "2ffeaef4-1979-45ed-845c-d177c182a05e",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "check",
+        "capability_id": "check_availability"
+      },
+      "payload": {
+        "outputs": {
+          "available": true
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-1",
+        "schema_version": "1.0",
+        "causation_id": "532b0796-25e8-4510-9d99-2f385b361da2"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "0eb6ca5c-9cbb-463e-a31a-378031ab74df",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "reserve",
+        "capability_id": "reserve_equipment"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-7",
+          "start_date": "2026-11-02",
+          "end_date": "2026-11-05",
+          "available": true
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-1",
+        "schema_version": "1.0",
+        "causation_id": "2ffeaef4-1979-45ed-845c-d177c182a05e"
+      },
+      "sequence": 3
+    },
+    {
+      "event_id": "6fb4d90d-ddeb-484f-bbd7-138544e9b058",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "reserve",
+        "capability_id": "reserve_equipment"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-1",
+        "schema_version": "1.0",
+        "causation_id": "0eb6ca5c-9cbb-463e-a31a-378031ab74df"
+      },
+      "sequence": 4
+    },
+    {
+      "event_id": "74c9902b-2a84-4f6f-8f01-aafbc0cb3bb4",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Equipment",
+        "id": "eq-7"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "reserve",
+        "capability_id": "reserve_equipment",
+        "entity": "Equipment"
+      },
+      "payload": {
+        "from": "available",
+        "to": "reserved"
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-1",
+        "schema_version": "1.0",
+        "causation_id": "6fb4d90d-ddeb-484f-bbd7-138544e9b058"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "9e946c24-9070-40ce-8b6f-da26e187a128",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "confirm",
+        "capability_id": "confirm_booking"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-7",
+          "start_date": "2026-11-02",
+          "end_date": "2026-11-05",
+          "available": true
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-1",
+        "schema_version": "1.0",
+        "causation_id": "74c9902b-2a84-4f6f-8f01-aafbc0cb3bb4"
+      },
+      "sequence": 5
+    },
+    {
+      "event_id": "8e5e9eee-c2ad-4dc6-9bb8-96d975f00179",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "confirm",
+        "capability_id": "confirm_booking"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-1",
+        "schema_version": "1.0",
+        "causation_id": "9e946c24-9070-40ce-8b6f-da26e187a128"
+      },
+      "sequence": 6
+    },
+    {
+      "event_id": "1e264e8e-9b32-4391-aeab-d49259ecb2e1",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "confirm",
+        "capability_id": "confirm_booking",
+        "entity": "Booking"
+      },
+      "payload": {
+        "from": "requested",
+        "to": "confirmed"
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-1",
+        "schema_version": "1.0",
+        "causation_id": "8e5e9eee-c2ad-4dc6-9bb8-96d975f00179"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "2c801081-896d-4ea1-aeda-de6343185522",
+      "event_type": "BookingConfirmed",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "confirm",
+        "capability_id": "confirm_booking",
+        "entity": "Booking"
+      },
+      "payload": {
+        "step_id": "confirm"
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-1",
+        "schema_version": "1.0",
+        "causation_id": "1e264e8e-9b32-4391-aeab-d49259ecb2e1"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "7ecb7e77-c475-4c15-9c29-ded2db0e5662",
+      "event_type": "ProcessCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request"
+      },
+      "payload": {
+        "outcome": "ok",
+        "completed_steps": [
+          "check",
+          "reserve",
+          "confirm"
+        ],
+        "skipped_steps": []
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-1",
+        "schema_version": "1.0",
+        "causation_id": "2c801081-896d-4ea1-aeda-de6343185522"
+      },
+      "sequence": 7
+    },
+    {
+      "event_id": "9f9d9eff-101d-4cda-bcb7-25fe77167418",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "twin"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue"
+      },
+      "payload": {
+        "aggregate_id": "b-1",
+        "inputs": {
+          "equipment_id": "eq-7",
+          "deposit_id": "dep-1"
+        },
+        "plan": [
+          {
+            "step_id": "deposit",
+            "actor": "human",
+            "capability_id": "take_deposit",
+            "effect": "write_compensable",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": null
+          },
+          {
+            "step_id": "issue",
+            "actor": "human",
+            "capability_id": "issue_equipment",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Booking",
+              "from": "confirmed",
+              "to": "issued"
+            }
+          },
+          {
+            "step_id": "rented",
+            "actor": "system",
+            "capability_id": "mark_rented",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Equipment",
+              "from": "reserved",
+              "to": "rented"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-1",
+        "schema_version": "1.0"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "5b15a11d-93d8-4676-914a-4e7f36239845",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "deposit",
+        "capability_id": "take_deposit"
+      },
+      "payload": {
+        "awaiting": "human",
+        "role": "clerk"
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-1",
+        "schema_version": "1.0",
+        "causation_id": "9f9d9eff-101d-4cda-bcb7-25fe77167418"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "6db88f02-4b38-406b-bf0d-4d4f1d582932",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-1"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "deposit",
+        "capability_id": "take_deposit"
+      },
+      "payload": {
+        "outputs": {
+          "amount": 30000
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-1",
+        "schema_version": "1.0",
+        "causation_id": "5b15a11d-93d8-4676-914a-4e7f36239845"
+      },
+      "sequence": 3
+    },
+    {
+      "event_id": "6818969e-e0e7-4ca8-a4f5-b9073b7439fd",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "issue",
+        "capability_id": "issue_equipment"
+      },
+      "payload": {
+        "awaiting": "human",
+        "role": "clerk"
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-1",
+        "schema_version": "1.0",
+        "causation_id": "6db88f02-4b38-406b-bf0d-4d4f1d582932"
+      },
+      "sequence": 4
+    },
+    {
+      "event_id": "5a19e6e7-5cb7-42aa-a3c9-a93c100adcf8",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-1"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "issue",
+        "capability_id": "issue_equipment"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-1",
+        "schema_version": "1.0",
+        "causation_id": "6818969e-e0e7-4ca8-a4f5-b9073b7439fd"
+      },
+      "sequence": 5
+    },
+    {
+      "event_id": "69869e30-b6f3-4f4d-b0d5-2bdfd2593605",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-1"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "issue",
+        "capability_id": "issue_equipment",
+        "entity": "Booking"
+      },
+      "payload": {
+        "from": "confirmed",
+        "to": "issued"
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-1",
+        "schema_version": "1.0",
+        "causation_id": "5a19e6e7-5cb7-42aa-a3c9-a93c100adcf8"
+      },
+      "sequence": 3
+    },
+    {
+      "event_id": "3a38c006-3f6b-4a56-96e4-51649d71ed0b",
+      "event_type": "EquipmentIssued",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-1"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "issue",
+        "capability_id": "issue_equipment",
+        "entity": "Booking"
+      },
+      "payload": {
+        "step_id": "issue"
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-1",
+        "schema_version": "1.0",
+        "causation_id": "69869e30-b6f3-4f4d-b0d5-2bdfd2593605"
+      },
+      "sequence": 4
+    },
+    {
+      "event_id": "7b6f2afd-fd98-42c1-8747-41338d02cb0f",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "rented",
+        "capability_id": "mark_rented"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-7",
+          "deposit_id": "dep-1",
+          "amount": 30000
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-1",
+        "schema_version": "1.0",
+        "causation_id": "3a38c006-3f6b-4a56-96e4-51649d71ed0b"
+      },
+      "sequence": 6
+    },
+    {
+      "event_id": "b1339fed-981a-4065-bec6-acbb991b1f43",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "rented",
+        "capability_id": "mark_rented"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-1",
+        "schema_version": "1.0",
+        "causation_id": "7b6f2afd-fd98-42c1-8747-41338d02cb0f"
+      },
+      "sequence": 7
+    },
+    {
+      "event_id": "440f968e-0dc6-42dc-8d67-a8864936da41",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Equipment",
+        "id": "eq-7"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "rented",
+        "capability_id": "mark_rented",
+        "entity": "Equipment"
+      },
+      "payload": {
+        "from": "reserved",
+        "to": "rented"
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-1",
+        "schema_version": "1.0",
+        "causation_id": "b1339fed-981a-4065-bec6-acbb991b1f43"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "21c9902f-547a-4ea3-b8a5-9189af6a2ce3",
+      "event_type": "ProcessCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue"
+      },
+      "payload": {
+        "outcome": "ok",
+        "completed_steps": [
+          "deposit",
+          "issue",
+          "rented"
+        ],
+        "skipped_steps": []
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-1",
+        "schema_version": "1.0",
+        "causation_id": "440f968e-0dc6-42dc-8d67-a8864936da41"
+      },
+      "sequence": 8
+    },
+    {
+      "event_id": "e725aa26-69a9-4d6f-9c81-eed98c9ba335",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "twin"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return"
+      },
+      "payload": {
+        "aggregate_id": "b-1",
+        "inputs": {
+          "equipment_id": "eq-7",
+          "deposit_id": "dep-1"
+        },
+        "plan": [
+          {
+            "step_id": "accept",
+            "actor": "human",
+            "capability_id": "accept_return",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Booking",
+              "from": "issued",
+              "to": "returned"
+            }
+          },
+          {
+            "step_id": "to_inspection",
+            "actor": "system",
+            "capability_id": "mark_inspection",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Equipment",
+              "from": "rented",
+              "to": "inspection"
+            }
+          },
+          {
+            "step_id": "assess",
+            "actor": "agent",
+            "capability_id": "assess_damage",
+            "effect": "read",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": null
+          },
+          {
+            "step_id": "settle",
+            "actor": "agent",
+            "capability_id": "refund_deposit",
+            "effect": "write_irreversible",
+            "gate": {
+              "required": true,
+              "reasons": [
+                "irreversible",
+                "policy",
+                "constraint:C001"
+              ],
+              "approver_role": "manager",
+              "declared_reason": "constraint",
+              "constraint_id": "C001",
+              "threshold_constraint": {
+                "id": "C001",
+                "threshold": {
+                  "attribute": "Deposit.amount",
+                  "operator": ">",
+                  "value": 50000,
+                  "unit": "RUB"
+                }
+              }
+            },
+            "transition": {
+              "entity": "Deposit",
+              "from": "held",
+              "to": "refunded"
+            }
+          },
+          {
+            "step_id": "release",
+            "actor": "agent",
+            "capability_id": "return_to_fleet",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Equipment",
+              "from": "inspection",
+              "to": "available"
+            }
+          },
+          {
+            "step_id": "close",
+            "actor": "agent",
+            "capability_id": "close_booking",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Booking",
+              "from": "returned",
+              "to": "closed"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "1dfe05b0-8a91-4044-9083-c043d80ee461",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "accept",
+        "capability_id": "accept_return"
+      },
+      "payload": {
+        "awaiting": "human",
+        "role": "clerk"
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "e725aa26-69a9-4d6f-9c81-eed98c9ba335"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "0269721d-6c72-42f9-a5b1-64ceb136f367",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "accept",
+        "capability_id": "accept_return"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "1dfe05b0-8a91-4044-9083-c043d80ee461"
+      },
+      "sequence": 3
+    },
+    {
+      "event_id": "56d12dc2-219a-46c5-8504-e85d578e356b",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-1"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "accept",
+        "capability_id": "accept_return",
+        "entity": "Booking"
+      },
+      "payload": {
+        "from": "issued",
+        "to": "returned"
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "0269721d-6c72-42f9-a5b1-64ceb136f367"
+      },
+      "sequence": 5
+    },
+    {
+      "event_id": "8c049c11-c3db-4a7c-adac-d832fe75b8cd",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "to_inspection",
+        "capability_id": "mark_inspection"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-7",
+          "deposit_id": "dep-1"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "56d12dc2-219a-46c5-8504-e85d578e356b"
+      },
+      "sequence": 4
+    },
+    {
+      "event_id": "11ca6ee6-bada-45e0-8845-e74e3f39c228",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "to_inspection",
+        "capability_id": "mark_inspection"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "8c049c11-c3db-4a7c-adac-d832fe75b8cd"
+      },
+      "sequence": 5
+    },
+    {
+      "event_id": "0fc364ec-853a-459b-8f42-76663cf37ea0",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Equipment",
+        "id": "eq-7"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "to_inspection",
+        "capability_id": "mark_inspection",
+        "entity": "Equipment"
+      },
+      "payload": {
+        "from": "rented",
+        "to": "inspection"
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "11ca6ee6-bada-45e0-8845-e74e3f39c228"
+      },
+      "sequence": 3
+    },
+    {
+      "event_id": "9a16e956-bd78-46cc-b753-c7816098dcf1",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "assess",
+        "capability_id": "assess_damage"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-7",
+          "deposit_id": "dep-1"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "0fc364ec-853a-459b-8f42-76663cf37ea0"
+      },
+      "sequence": 6
+    },
+    {
+      "event_id": "44d2f3c2-8421-4e23-910f-e7db721b3f9a",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "assess",
+        "capability_id": "assess_damage"
+      },
+      "payload": {
+        "outputs": {
+          "damage_score": 0.05,
+          "damage_cost": 0,
+          "verdict": "ok",
+          "inspection_id": "inspection-b-1"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "9a16e956-bd78-46cc-b753-c7816098dcf1",
+        "model": {
+          "name": "twin-stub",
+          "prompt_version": "twin"
+        }
+      },
+      "sequence": 7
+    },
+    {
+      "event_id": "a45faa74-a709-43f5-9db1-ffbb9c9e2088",
+      "event_type": "AutoApprovedByRule",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "settle",
+        "capability_id": "refund_deposit",
+        "constraint_id": "C001"
+      },
+      "payload": {
+        "attribute": "Deposit.amount",
+        "operator": ">",
+        "threshold": 50000,
+        "unit": "RUB",
+        "value": 30000,
+        "entity_id": "dep-1"
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "44d2f3c2-8421-4e23-910f-e7db721b3f9a"
+      },
+      "sequence": 8
+    },
+    {
+      "event_id": "07984c4c-4be1-4539-9ba3-6a4b444bfa2b",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "settle",
+        "capability_id": "refund_deposit"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-7",
+          "deposit_id": "dep-1",
+          "damage_score": 0.05,
+          "damage_cost": 0,
+          "verdict": "ok",
+          "inspection_id": "inspection-b-1"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "a45faa74-a709-43f5-9db1-ffbb9c9e2088"
+      },
+      "sequence": 9
+    },
+    {
+      "event_id": "e8b7a4c3-4d5a-4190-9f83-0e52f483dfeb",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "settle",
+        "capability_id": "refund_deposit"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "07984c4c-4be1-4539-9ba3-6a4b444bfa2b"
+      },
+      "sequence": 10
+    },
+    {
+      "event_id": "634d72f1-c4ab-4b45-b7cb-e665e7fcc133",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Deposit",
+        "id": "dep-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "settle",
+        "capability_id": "refund_deposit",
+        "entity": "Deposit"
+      },
+      "payload": {
+        "from": "held",
+        "to": "refunded"
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "e8b7a4c3-4d5a-4190-9f83-0e52f483dfeb"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "707f1cda-e4bb-4e96-8101-e3b842c92963",
+      "event_type": "DepositRefunded",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Deposit",
+        "id": "dep-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "settle",
+        "capability_id": "refund_deposit",
+        "entity": "Deposit"
+      },
+      "payload": {
+        "step_id": "settle"
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "634d72f1-c4ab-4b45-b7cb-e665e7fcc133"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "426dae4e-17b8-41c0-aa8b-22d92551af56",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "release",
+        "capability_id": "return_to_fleet"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-7",
+          "deposit_id": "dep-1",
+          "damage_score": 0.05,
+          "damage_cost": 0,
+          "verdict": "ok",
+          "inspection_id": "inspection-b-1"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "707f1cda-e4bb-4e96-8101-e3b842c92963"
+      },
+      "sequence": 11
+    },
+    {
+      "event_id": "37b6b4ee-2d31-4a81-a648-7a2f7f14f1d0",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "release",
+        "capability_id": "return_to_fleet"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "426dae4e-17b8-41c0-aa8b-22d92551af56"
+      },
+      "sequence": 12
+    },
+    {
+      "event_id": "ede08057-19c3-4880-a6ed-560d28df4e67",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Equipment",
+        "id": "eq-7"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "release",
+        "capability_id": "return_to_fleet",
+        "entity": "Equipment"
+      },
+      "payload": {
+        "from": "inspection",
+        "to": "available"
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "37b6b4ee-2d31-4a81-a648-7a2f7f14f1d0"
+      },
+      "sequence": 4
+    },
+    {
+      "event_id": "16b0137f-48e1-4957-be70-5ad23ad0bdea",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "close",
+        "capability_id": "close_booking"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-7",
+          "deposit_id": "dep-1",
+          "damage_score": 0.05,
+          "damage_cost": 0,
+          "verdict": "ok",
+          "inspection_id": "inspection-b-1"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "ede08057-19c3-4880-a6ed-560d28df4e67"
+      },
+      "sequence": 13
+    },
+    {
+      "event_id": "e2c91dab-65a2-4b17-9988-2b6d7d73833b",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "close",
+        "capability_id": "close_booking"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "16b0137f-48e1-4957-be70-5ad23ad0bdea"
+      },
+      "sequence": 14
+    },
+    {
+      "event_id": "7488b0e5-fbe3-48a4-81ab-9fc1b670f27e",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-1"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return",
+        "step_id": "close",
+        "capability_id": "close_booking",
+        "entity": "Booking"
+      },
+      "payload": {
+        "from": "returned",
+        "to": "closed"
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "e2c91dab-65a2-4b17-9988-2b6d7d73833b"
+      },
+      "sequence": 6
+    },
+    {
+      "event_id": "fa3e6d9e-b0c0-4d78-b20a-218921b7553d",
+      "event_type": "ProcessCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "rental_return",
+        "id": "twin-rental_return-b-1"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "rental_return"
+      },
+      "payload": {
+        "outcome": "ok",
+        "completed_steps": [
+          "accept",
+          "to_inspection",
+          "assess",
+          "settle",
+          "release",
+          "close"
+        ],
+        "skipped_steps": []
+      },
+      "metadata": {
+        "correlation_id": "twin-rental_return-b-1",
+        "schema_version": "1.0",
+        "causation_id": "7488b0e5-fbe3-48a4-81ab-9fc1b670f27e"
+      },
+      "sequence": 15
+    },
+    {
+      "event_id": "4289c35d-9c11-4fa2-90d4-a8d7f8cf1ec1",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "twin"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request"
+      },
+      "payload": {
+        "aggregate_id": "b-2",
+        "inputs": {
+          "equipment_id": "eq-9",
+          "start_date": "2026-11-03",
+          "end_date": "2026-11-04"
+        },
+        "plan": [
+          {
+            "step_id": "check",
+            "actor": "agent",
+            "capability_id": "check_availability",
+            "effect": "read",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": null
+          },
+          {
+            "step_id": "reserve",
+            "actor": "agent",
+            "capability_id": "reserve_equipment",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Equipment",
+              "from": "available",
+              "to": "reserved"
+            }
+          },
+          {
+            "step_id": "confirm",
+            "actor": "agent",
+            "capability_id": "confirm_booking",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Booking",
+              "from": "requested",
+              "to": "confirmed"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-2",
+        "schema_version": "1.0"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "857dfda8-84a6-40bd-9ec5-28dbab098189",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "check",
+        "capability_id": "check_availability"
+      },
+      "payload": {
+        "outputs": {
+          "available": true
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-2",
+        "schema_version": "1.0",
+        "causation_id": "4289c35d-9c11-4fa2-90d4-a8d7f8cf1ec1"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "0c130688-7503-4c0f-b16a-5ea8e8cd5772",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "reserve",
+        "capability_id": "reserve_equipment"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-9",
+          "start_date": "2026-11-03",
+          "end_date": "2026-11-04",
+          "available": true
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-2",
+        "schema_version": "1.0",
+        "causation_id": "857dfda8-84a6-40bd-9ec5-28dbab098189"
+      },
+      "sequence": 3
+    },
+    {
+      "event_id": "3c1bfcbe-37fa-48d1-ac3d-12839e8fd287",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "reserve",
+        "capability_id": "reserve_equipment"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-2",
+        "schema_version": "1.0",
+        "causation_id": "0c130688-7503-4c0f-b16a-5ea8e8cd5772"
+      },
+      "sequence": 4
+    },
+    {
+      "event_id": "0ab85a50-5b14-4114-89b6-a0151973892d",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Equipment",
+        "id": "eq-9"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "reserve",
+        "capability_id": "reserve_equipment",
+        "entity": "Equipment"
+      },
+      "payload": {
+        "from": "available",
+        "to": "reserved"
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-2",
+        "schema_version": "1.0",
+        "causation_id": "3c1bfcbe-37fa-48d1-ac3d-12839e8fd287"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "2ff10a5b-765b-4017-97c0-ed8655d3bc5b",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "confirm",
+        "capability_id": "confirm_booking"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-9",
+          "start_date": "2026-11-03",
+          "end_date": "2026-11-04",
+          "available": true
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-2",
+        "schema_version": "1.0",
+        "causation_id": "0ab85a50-5b14-4114-89b6-a0151973892d"
+      },
+      "sequence": 5
+    },
+    {
+      "event_id": "9cba4df9-4bdb-4d0d-9800-08f9c7733dfd",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "confirm",
+        "capability_id": "confirm_booking"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-2",
+        "schema_version": "1.0",
+        "causation_id": "2ff10a5b-765b-4017-97c0-ed8655d3bc5b"
+      },
+      "sequence": 6
+    },
+    {
+      "event_id": "62243d23-9bdd-49d6-928a-fefeb5fc6524",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "confirm",
+        "capability_id": "confirm_booking",
+        "entity": "Booking"
+      },
+      "payload": {
+        "from": "requested",
+        "to": "confirmed"
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-2",
+        "schema_version": "1.0",
+        "causation_id": "9cba4df9-4bdb-4d0d-9800-08f9c7733dfd"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "ce96c857-9f9d-4dbf-a30f-270274872e83",
+      "event_type": "BookingConfirmed",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request",
+        "step_id": "confirm",
+        "capability_id": "confirm_booking",
+        "entity": "Booking"
+      },
+      "payload": {
+        "step_id": "confirm"
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-2",
+        "schema_version": "1.0",
+        "causation_id": "62243d23-9bdd-49d6-928a-fefeb5fc6524"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "f3981ee5-44ae-49c9-aa38-b5a1d95df625",
+      "event_type": "ProcessCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "booking_request",
+        "id": "twin-booking_request-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "booking_request"
+      },
+      "payload": {
+        "outcome": "ok",
+        "completed_steps": [
+          "check",
+          "reserve",
+          "confirm"
+        ],
+        "skipped_steps": []
+      },
+      "metadata": {
+        "correlation_id": "twin-booking_request-b-2",
+        "schema_version": "1.0",
+        "causation_id": "ce96c857-9f9d-4dbf-a30f-270274872e83"
+      },
+      "sequence": 7
+    },
+    {
+      "event_id": "4fe96547-11be-48b4-8a5b-4315e664ebb6",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "twin"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue"
+      },
+      "payload": {
+        "aggregate_id": "b-2",
+        "inputs": {
+          "equipment_id": "eq-9",
+          "deposit_id": "dep-2"
+        },
+        "plan": [
+          {
+            "step_id": "deposit",
+            "actor": "human",
+            "capability_id": "take_deposit",
+            "effect": "write_compensable",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": null
+          },
+          {
+            "step_id": "issue",
+            "actor": "human",
+            "capability_id": "issue_equipment",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Booking",
+              "from": "confirmed",
+              "to": "issued"
+            }
+          },
+          {
+            "step_id": "rented",
+            "actor": "system",
+            "capability_id": "mark_rented",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Equipment",
+              "from": "reserved",
+              "to": "rented"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-2",
+        "schema_version": "1.0"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "8fb646ea-da51-4001-8c12-97ab3cdd99db",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "deposit",
+        "capability_id": "take_deposit"
+      },
+      "payload": {
+        "awaiting": "human",
+        "role": "clerk"
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-2",
+        "schema_version": "1.0",
+        "causation_id": "4fe96547-11be-48b4-8a5b-4315e664ebb6"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "4aeae336-1d27-430d-be8b-d1a0a8955f03",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-2"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "deposit",
+        "capability_id": "take_deposit"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-2",
+        "schema_version": "1.0",
+        "causation_id": "8fb646ea-da51-4001-8c12-97ab3cdd99db"
+      },
+      "sequence": 3
+    },
+    {
+      "event_id": "aebe4d23-1aa9-4fae-9e3a-4ef17b74fe84",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "issue",
+        "capability_id": "issue_equipment"
+      },
+      "payload": {
+        "awaiting": "human",
+        "role": "clerk"
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-2",
+        "schema_version": "1.0",
+        "causation_id": "4aeae336-1d27-430d-be8b-d1a0a8955f03"
+      },
+      "sequence": 4
+    },
+    {
+      "event_id": "1344b06c-5411-4801-8a6d-b26c284972b7",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-2"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "issue",
+        "capability_id": "issue_equipment"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-2",
+        "schema_version": "1.0",
+        "causation_id": "aebe4d23-1aa9-4fae-9e3a-4ef17b74fe84"
+      },
+      "sequence": 5
+    },
+    {
+      "event_id": "55d428b5-7880-4cbf-a2a9-9cc879db75ac",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-2"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "issue",
+        "capability_id": "issue_equipment",
+        "entity": "Booking"
+      },
+      "payload": {
+        "from": "confirmed",
+        "to": "issued"
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-2",
+        "schema_version": "1.0",
+        "causation_id": "1344b06c-5411-4801-8a6d-b26c284972b7"
+      },
+      "sequence": 3
+    },
+    {
+      "event_id": "f2ba62fd-7ad0-4a8e-a8e5-9855fdd5ba1b",
+      "event_type": "EquipmentIssued",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-2"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "issue",
+        "capability_id": "issue_equipment",
+        "entity": "Booking"
+      },
+      "payload": {
+        "step_id": "issue"
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-2",
+        "schema_version": "1.0",
+        "causation_id": "55d428b5-7880-4cbf-a2a9-9cc879db75ac"
+      },
+      "sequence": 4
+    },
+    {
+      "event_id": "ec2ebe6a-e722-416a-81a4-00314c24fd52",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "rented",
+        "capability_id": "mark_rented"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-9",
+          "deposit_id": "dep-2"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-2",
+        "schema_version": "1.0",
+        "causation_id": "f2ba62fd-7ad0-4a8e-a8e5-9855fdd5ba1b"
+      },
+      "sequence": 6
+    },
+    {
+      "event_id": "864a7742-6d74-4a51-825d-ceddf189d48c",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "rented",
+        "capability_id": "mark_rented"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-2",
+        "schema_version": "1.0",
+        "causation_id": "ec2ebe6a-e722-416a-81a4-00314c24fd52"
+      },
+      "sequence": 7
+    },
+    {
+      "event_id": "8cf150e6-57d0-4618-8364-06c248f4ff29",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Equipment",
+        "id": "eq-9"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue",
+        "step_id": "rented",
+        "capability_id": "mark_rented",
+        "entity": "Equipment"
+      },
+      "payload": {
+        "from": "reserved",
+        "to": "rented"
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-2",
+        "schema_version": "1.0",
+        "causation_id": "864a7742-6d74-4a51-825d-ceddf189d48c"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "ae1fce3b-d781-4d09-876d-e0a77a19113f",
+      "event_type": "ProcessCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "equipment_issue",
+        "id": "twin-equipment_issue-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "equipment_issue"
+      },
+      "payload": {
+        "outcome": "ok",
+        "completed_steps": [
+          "deposit",
+          "issue",
+          "rented"
+        ],
+        "skipped_steps": []
+      },
+      "metadata": {
+        "correlation_id": "twin-equipment_issue-b-2",
+        "schema_version": "1.0",
+        "causation_id": "8cf150e6-57d0-4618-8364-06c248f4ff29"
+      },
+      "sequence": 8
+    },
+    {
+      "event_id": "22cbcae0-8222-4c9e-af6e-add53f57f14c",
+      "event_type": "ProcessInitiated",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "twin"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return"
+      },
+      "payload": {
+        "aggregate_id": "b-2",
+        "inputs": {
+          "equipment_id": "eq-9",
+          "deposit_id": "dep-2"
+        },
+        "plan": [
+          {
+            "step_id": "accept",
+            "actor": "human",
+            "capability_id": "accept_return",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Booking",
+              "from": "issued",
+              "to": "returned"
+            }
+          },
+          {
+            "step_id": "to_inspection",
+            "actor": "system",
+            "capability_id": "mark_inspection",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Equipment",
+              "from": "rented",
+              "to": "inspection"
+            }
+          },
+          {
+            "step_id": "assess",
+            "actor": "agent",
+            "capability_id": "assess_damage",
+            "effect": "read",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": null
+          },
+          {
+            "step_id": "settle",
+            "actor": "agent",
+            "capability_id": "withhold_deposit",
+            "effect": "write_irreversible",
+            "gate": {
+              "required": true,
+              "reasons": [
+                "irreversible",
+                "policy",
+                "constraint:C004"
+              ],
+              "approver_role": "manager",
+              "declared_reason": "constraint",
+              "constraint_id": "C004",
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Deposit",
+              "from": "held",
+              "to": "withheld"
+            }
+          },
+          {
+            "step_id": "release",
+            "actor": "agent",
+            "capability_id": "send_to_repair",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Equipment",
+              "from": "inspection",
+              "to": "repair"
+            }
+          },
+          {
+            "step_id": "close",
+            "actor": "agent",
+            "capability_id": "close_booking",
+            "effect": "write_reversible",
+            "gate": {
+              "required": false,
+              "reasons": [],
+              "approver_role": null,
+              "declared_reason": null,
+              "constraint_id": null,
+              "threshold_constraint": null
+            },
+            "transition": {
+              "entity": "Booking",
+              "from": "returned",
+              "to": "closed"
+            }
+          }
+        ]
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "a5e14648-d10f-4e38-ae37-50b4a41d7919",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "accept",
+        "capability_id": "accept_return"
+      },
+      "payload": {
+        "awaiting": "human",
+        "role": "clerk"
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "22cbcae0-8222-4c9e-af6e-add53f57f14c"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "e9515a0e-8439-49a9-b960-c828e79fd548",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "accept",
+        "capability_id": "accept_return"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "a5e14648-d10f-4e38-ae37-50b4a41d7919"
+      },
+      "sequence": 3
+    },
+    {
+      "event_id": "66f2fe3e-9e0f-4b90-b17f-b1efcba4d620",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-2"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_clerk",
+        "role": "clerk"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "accept",
+        "capability_id": "accept_return",
+        "entity": "Booking"
+      },
+      "payload": {
+        "from": "issued",
+        "to": "returned"
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "e9515a0e-8439-49a9-b960-c828e79fd548"
+      },
+      "sequence": 5
+    },
+    {
+      "event_id": "7da00a95-69c3-42e2-aa8d-82c0be2b1dec",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "to_inspection",
+        "capability_id": "mark_inspection"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-9",
+          "deposit_id": "dep-2"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "66f2fe3e-9e0f-4b90-b17f-b1efcba4d620"
+      },
+      "sequence": 4
+    },
+    {
+      "event_id": "9c52ce75-1705-4d4d-b13b-d36be30f7a73",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "to_inspection",
+        "capability_id": "mark_inspection"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "7da00a95-69c3-42e2-aa8d-82c0be2b1dec"
+      },
+      "sequence": 5
+    },
+    {
+      "event_id": "95ce1902-b969-4490-8bbf-a48471c4589c",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Equipment",
+        "id": "eq-9"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime",
+        "role": "scheduler"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "to_inspection",
+        "capability_id": "mark_inspection",
+        "entity": "Equipment"
+      },
+      "payload": {
+        "from": "rented",
+        "to": "inspection"
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "9c52ce75-1705-4d4d-b13b-d36be30f7a73"
+      },
+      "sequence": 3
+    },
+    {
+      "event_id": "2ac3f760-7016-4912-ae05-e944712b0fc3",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "assess",
+        "capability_id": "assess_damage"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-9",
+          "deposit_id": "dep-2"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "95ce1902-b969-4490-8bbf-a48471c4589c"
+      },
+      "sequence": 6
+    },
+    {
+      "event_id": "08b9b4cb-4c62-4beb-8859-d3f040808b1b",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "assess",
+        "capability_id": "assess_damage"
+      },
+      "payload": {
+        "outputs": {
+          "damage_score": 0.82,
+          "damage_cost": 41000,
+          "verdict": "damaged",
+          "inspection_id": "inspection-b-2"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "2ac3f760-7016-4912-ae05-e944712b0fc3",
+        "model": {
+          "name": "twin-stub",
+          "prompt_version": "twin"
+        }
+      },
+      "sequence": 7
+    },
+    {
+      "event_id": "48ff7a2a-e10c-4bcf-b21a-eed9658b4bab",
+      "event_type": "HumanGateRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "settle",
+        "capability_id": "withhold_deposit",
+        "constraint_id": "C004"
+      },
+      "payload": {
+        "approver_role": "manager",
+        "reason": "constraint",
+        "reasons": [
+          "irreversible",
+          "policy",
+          "constraint:C004"
+        ],
+        "condition": null
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "08b9b4cb-4c62-4beb-8859-d3f040808b1b"
+      },
+      "sequence": 8
+    },
+    {
+      "event_id": "837bf9c2-3e83-42d2-ab8b-bde586d71c02",
+      "event_type": "HumanGateClaimed",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_manager",
+        "role": "manager"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "settle",
+        "capability_id": "withhold_deposit",
+        "constraint_id": "C004"
+      },
+      "payload": {},
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "48ff7a2a-e10c-4bcf-b21a-eed9658b4bab"
+      },
+      "sequence": 9
+    },
+    {
+      "event_id": "fa9087c4-8b3b-4091-bbec-21a9bb253a56",
+      "event_type": "HumanGateResolved",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "human",
+        "id": "twin_manager",
+        "role": "manager"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "settle",
+        "capability_id": "withhold_deposit",
+        "constraint_id": "C004"
+      },
+      "payload": {
+        "decision": "approved",
+        "note": "решение по сценарию двойника"
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "837bf9c2-3e83-42d2-ab8b-bde586d71c02"
+      },
+      "sequence": 10
+    },
+    {
+      "event_id": "a2988a60-91ad-4715-9617-f581c9a86244",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "settle",
+        "capability_id": "withhold_deposit"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-9",
+          "deposit_id": "dep-2",
+          "damage_score": 0.82,
+          "damage_cost": 41000,
+          "verdict": "damaged",
+          "inspection_id": "inspection-b-2"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "fa9087c4-8b3b-4091-bbec-21a9bb253a56"
+      },
+      "sequence": 11
+    },
+    {
+      "event_id": "f0931169-0b3b-4ad9-b88a-9be8a6998d33",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "settle",
+        "capability_id": "withhold_deposit"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "a2988a60-91ad-4715-9617-f581c9a86244"
+      },
+      "sequence": 12
+    },
+    {
+      "event_id": "f22442db-d198-4365-834b-12ebad2d5b17",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Deposit",
+        "id": "dep-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "settle",
+        "capability_id": "withhold_deposit",
+        "entity": "Deposit"
+      },
+      "payload": {
+        "from": "held",
+        "to": "withheld"
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "f0931169-0b3b-4ad9-b88a-9be8a6998d33"
+      },
+      "sequence": 1
+    },
+    {
+      "event_id": "7423f648-a461-498c-8e8d-8e3182b44ed2",
+      "event_type": "DepositWithheld",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Deposit",
+        "id": "dep-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "settle",
+        "capability_id": "withhold_deposit",
+        "entity": "Deposit"
+      },
+      "payload": {
+        "step_id": "settle"
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "f22442db-d198-4365-834b-12ebad2d5b17"
+      },
+      "sequence": 2
+    },
+    {
+      "event_id": "e4cb38bd-9b59-42ce-b1c3-5849612f0afe",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "release",
+        "capability_id": "send_to_repair"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-9",
+          "deposit_id": "dep-2",
+          "damage_score": 0.82,
+          "damage_cost": 41000,
+          "verdict": "damaged",
+          "inspection_id": "inspection-b-2"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "7423f648-a461-498c-8e8d-8e3182b44ed2"
+      },
+      "sequence": 13
+    },
+    {
+      "event_id": "a9162ecc-b5ee-4f00-b2bd-f62c1081f0d9",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "release",
+        "capability_id": "send_to_repair"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "e4cb38bd-9b59-42ce-b1c3-5849612f0afe"
+      },
+      "sequence": 14
+    },
+    {
+      "event_id": "a43f1853-0584-4ea7-a2c6-f4d40f795f4d",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Equipment",
+        "id": "eq-9"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "release",
+        "capability_id": "send_to_repair",
+        "entity": "Equipment"
+      },
+      "payload": {
+        "from": "inspection",
+        "to": "repair"
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "a9162ecc-b5ee-4f00-b2bd-f62c1081f0d9"
+      },
+      "sequence": 4
+    },
+    {
+      "event_id": "e2c1faef-cc64-4e4e-ba0e-6ba033338b22",
+      "event_type": "EquipmentSentToRepair",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Equipment",
+        "id": "eq-9"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "release",
+        "capability_id": "send_to_repair",
+        "entity": "Equipment"
+      },
+      "payload": {
+        "step_id": "release"
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "a43f1853-0584-4ea7-a2c6-f4d40f795f4d"
+      },
+      "sequence": 5
+    },
+    {
+      "event_id": "128414f4-e5c4-4673-94b8-4c36273e176c",
+      "event_type": "StepRequested",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "close",
+        "capability_id": "close_booking"
+      },
+      "payload": {
+        "inputs": {
+          "equipment_id": "eq-9",
+          "deposit_id": "dep-2",
+          "damage_score": 0.82,
+          "damage_cost": 41000,
+          "verdict": "damaged",
+          "inspection_id": "inspection-b-2"
+        }
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "e2c1faef-cc64-4e4e-ba0e-6ba033338b22"
+      },
+      "sequence": 15
+    },
+    {
+      "event_id": "bcba6cb3-a3ff-42f2-8860-5a50148ada18",
+      "event_type": "StepCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "close",
+        "capability_id": "close_booking"
+      },
+      "payload": {
+        "outputs": {}
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "128414f4-e5c4-4673-94b8-4c36273e176c"
+      },
+      "sequence": 16
+    },
+    {
+      "event_id": "0c43c7ed-7d16-4e6a-9f27-0c752155537d",
+      "event_type": "EntityTransitioned",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "entity",
+        "type": "Booking",
+        "id": "b-2"
+      },
+      "actor": {
+        "kind": "agent",
+        "id": "twin_agent",
+        "role": "rental_agent"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return",
+        "step_id": "close",
+        "capability_id": "close_booking",
+        "entity": "Booking"
+      },
+      "payload": {
+        "from": "returned",
+        "to": "closed"
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "bcba6cb3-a3ff-42f2-8860-5a50148ada18"
+      },
+      "sequence": 6
+    },
+    {
+      "event_id": "cfa19222-dfad-4215-9acd-a0e552ad4666",
+      "event_type": "ProcessCompleted",
+      "occurred_at": "2026-10-26T21:59:38Z",
+      "aggregate": {
+        "kind": "process_instance",
+        "type": "damaged_return",
+        "id": "twin-damaged_return-b-2"
+      },
+      "actor": {
+        "kind": "system",
+        "id": "runtime"
+      },
+      "scope": {
+        "system_id": "equipment_rental",
+        "process_id": "damaged_return"
+      },
+      "payload": {
+        "outcome": "ok",
+        "completed_steps": [
+          "accept",
+          "to_inspection",
+          "assess",
+          "settle",
+          "release",
+          "close"
+        ],
+        "skipped_steps": []
+      },
+      "metadata": {
+        "correlation_id": "twin-damaged_return-b-2",
+        "schema_version": "1.0",
+        "causation_id": "0c43c7ed-7d16-4e6a-9f27-0c752155537d"
+      },
+      "sequence": 17
+    }
+  ]
+}
