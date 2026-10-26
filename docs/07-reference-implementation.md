@@ -10,7 +10,11 @@ softoscope/
   event_store.py  — журнал: append-only, схема события, event_id/idempotency_key, sequence по агрегату, JSONL
   projections.py  — ProcessInstances, PendingGates, EntityState, audit_trail; пересборка с нуля
   runtime.py      — цикл исполнения: Static Guard → Plan → Execute → Verify → Close
-tests/            — 31 тест на синтетической модели (tests/fixture_model.py), без домена
+  oop.py          — описание системы классами → пять слоёв (ADR-021, docs/08)
+  decompile.py    — пять слоёв → описание классами, без потерь
+  process_map.py  — карта модели: сводка, схемы процессов, автоматы (Mermaid)
+  twin.py         — цифровой двойник: этот же runtime с заглушками и человеком по сценарию
+tests/            — 58 тестов на синтетической модели (tests/fixture_model.py) и на примерах (круг описания классами), без домена в ядре
 ```
 
 ## MCP-сервер
