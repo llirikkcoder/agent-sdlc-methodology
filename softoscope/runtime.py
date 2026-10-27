@@ -258,6 +258,8 @@ class Runtime:
             return steps[0]
         last = (inst["completed_steps"] + inst["skipped_steps"])[-1]
         last_step = next(s for s in steps if s["step_id"] == last)
+        if last_step.get("terminal"):
+            return None  # ветка в конец процесса
         order = [s["step_id"] for s in steps]
         # next[] задаёт ветвление; условия словами runtime не вычисляет — берётся первый не сделанный.
         candidates = [n for n in last_step.get("next", []) if n not in done] or order[order.index(last) + 1 :]

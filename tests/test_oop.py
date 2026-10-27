@@ -32,7 +32,7 @@ from softoscope.oop import (  # noqa: E402
     Trigger,
     compile_namespace,
 )
-from softoscope.process_map import render  # noqa: E402
+from softoscope.process_map import group_diagram, render  # noqa: E402
 from softoscope.twin import Scenario, Twin  # noqa: E402
 
 EXAMPLES = sorted(p for p in (ROOT / "examples").iterdir() if (p / "purpose.json").exists())
@@ -214,6 +214,20 @@ class TwinRuns(unittest.TestCase):
         self.assertEqual(runs[-1].entity_states["Booking:b-1"], "closed")
         self.assertEqual(runs[-1].entity_states["Equipment:eq-1"], "available")
 
+    def test_terminal_step_ends_process_in_runtime_and_map(self) -> None:
+        import copy
+
+        layers = copy.deepcopy(_fixture_layers())
+        flow = next(p for p in layers["processes"]["processes"] if p["process_id"] == "item_flow")
+        flow["steps"][1]["terminal"] = True  # classify: дальше процесс не идёт
+        with Twin(layers) as twin:
+            run = twin.run("item_flow", "it-9")
+            text = render(twin.model, [], "item_flow")
+        self.assertEqual(run.status, "completed")
+        self.assertEqual(run.calls, ["read_item", "classify_item"])
+        self.assertIn("s_classify --> done", text)
+        self.assertNotIn("s_classify --> s_prepare", text)
+
     def test_twin_never_touches_source_layers(self) -> None:
         layers = _fixture_layers()
         before = json.dumps(layers, sort_keys=True)
@@ -231,6 +245,18 @@ class ProcessMap(unittest.TestCase):
         self.assertIn("stateDiagram-v2", text)
         self.assertIn("g_publish{", text)  # гейт перед необратимым шагом
         self.assertIn("class s_do_risky hole", text)
+        self.assertIn("⇒ ItemPublished", text)  # событие шага на схеме
+
+    def test_group_diagram_keeps_processes_apart_and_shows_events(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            model = load_model(fixture_model.write_model(Path(tmp) / "m"))
+            ids = [p["process_id"] for p in fixture_model.PROCESSES["processes"]][:2]
+            text = "\n".join(group_diagram(model, ids, []))
+        self.assertEqual(text.count("flowchart TD"), 1)
+        self.assertEqual(text.count("subgraph "), 2)
+        self.assertIn("p1_start", text)
+        self.assertIn("p2_start", text)
+        self.assertNotIn("    start", text)
 
 
 if __name__ == "__main__":

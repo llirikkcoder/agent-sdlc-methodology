@@ -391,13 +391,15 @@ def decompile(layers: dict[str, dict[str, Any]]) -> str:
                 kws.append(f"condition={s['condition']!r}")
             if "next" in s:
                 kws.append(f"next={s['next']!r}")
+            if "terminal" in s:
+                kws.append(f"terminal={s['terminal']!r}")
             if "on_failure" in s:
                 kws.append(f"on_failure={s['on_failure']!r}")
             if "emits" in s:
                 kws.append(f"emits={refs(ev_var, s['emits'])}")
             if sv != s["step_id"]:
                 kws.append(f"id={s['step_id']!r}")
-            sx = _extra(s, {"step_id", "name", "description", "actor", "role", "capability_id", "human_gate", "transition", "condition", "next", "on_failure", "emits"})
+            sx = _extra(s, {"step_id", "name", "description", "actor", "role", "capability_id", "human_gate", "transition", "condition", "next", "terminal", "on_failure", "emits"})
             if sx:
                 kws.append(f"**{sx!r}")
             ctor = f"Step.{s['actor']}" if s["actor"] in ("agent", "human", "system") else "Step"

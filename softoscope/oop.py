@@ -645,6 +645,7 @@ class Step(_Member):
         transition: Transition | State | None = None,
         condition: str | None = None,
         next: Iterable[Any] | None = None,
+        terminal: bool | None = None,
         on_failure: str | None = None,
         emits: Iterable[Any] | None = None,
         description: str | None = None,
@@ -652,6 +653,7 @@ class Step(_Member):
         **extra: Any,
     ):
         super().__init__(id)
+        self.terminal = terminal
         self.title, self.actor, self.role, self.capability = name, actor, role, capability
         self.gate, self.transition, self.condition = gate, transition, condition
         self.next = list(next) if next is not None else None
@@ -686,6 +688,7 @@ class Step(_Member):
                 "transition": tr.step_ref() if tr else None,
                 "condition": self.condition,
                 "next": [x.name if isinstance(x, Step) else x for x in self.next] if self.next is not None else None,
+                "terminal": self.terminal,
                 "on_failure": self.on_failure,
                 "emits": _ids(self.emits),
             }

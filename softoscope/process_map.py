@@ -2,7 +2,7 @@
 
 Строится только из пяти слоёв и дыр drift: ничего не домысливает. На схеме процесса видно
 исполнителя каждого шага, возможность и её класс эффекта, гейт (ромб перед шагом, с
-утверждающим и условием), переход сущности и шаги, у которых нет implemented-привязки.
+утверждающим и условием), переход сущности, события шага (⇒) и шаги, у которых нет implemented-привязки.
 """
 
 from __future__ import annotations
@@ -58,14 +58,17 @@ def summary(model: Model, holes: list[dict[str, Any]]) -> list[str]:
     return lines
 
 
-def process_diagram(model: Model, process_id: str, holes: list[dict[str, Any]]) -> list[str]:
+def _process_body(model: Model, process_id: str, holes: list[dict[str, Any]], prefix: str = "") -> list[str]:
+    """Узлы и рёбра схемы процесса; prefix разводит имена, когда процессов на схеме несколько."""
     p = model.procs[process_id]
     steps = p["steps"]
     hole_steps = {h["step_id"] for h in holes if h["process_id"] == process_id and h["step_id"] and h["level"] in ("ERROR", "WARN")}
-    out = ["```mermaid", "flowchart TD", f'    start(["{_q(p["trigger"]["kind"])}: {_q(_short(p["trigger"]["description"], 50))}"])']
+    start, done = f"{prefix}start", f"{prefix}done"
+    out = [f'    {start}(["{_q(p["trigger"]["kind"])}: {_q(_short(p["trigger"]["description"], 50))}"])']
     node: dict[str, str] = {}
     for s in steps:
         sid = s["step_id"]
+        sn = f"{prefix}s_{sid}"
         cap = model.capability(s.get("capability_id"))
         label = f"{_q(s['name'])}<br/><small>{s['actor']}"
         if s.get("role"):
@@ -75,38 +78,59 @@ def process_diagram(model: Model, process_id: str, holes: list[dict[str, Any]]) 
         tr = s.get("transition")
         if tr:
             label += f"<br/>{_q(tr['entity'])}: {_q(tr.get('from', '*'))} → {_q(tr['to'])}"
+        if s.get("emits"):
+            label += f"<br/>⇒ {_q(', '.join(s['emits']))}"
         label += "</small>"
         shape = {"human": ('[/"', '"/]'), "system": ('[["', '"]]')}.get(s["actor"], ('["', '"]'))
-        out.append(f"    s_{sid}{shape[0]}{label}{shape[1]}")
-        node[sid] = f"s_{sid}"
+        out.append(f"    {sn}{shape[0]}{label}{shape[1]}")
+        node[sid] = sn
         rule = model.gate_rule(s)
         if rule.required:
             approver = rule.approver_role or next((r for r, v in model.roles.items() if v.get("may_approve")), "?")
             cond = (s.get("human_gate") or {}).get("condition")
             glabel = f"гейт: {_q(approver)}" + (f"<br/>{_q(cond)}" if cond else "") + f"<br/><small>{_q(', '.join(rule.reasons))}</small>"
-            out.append(f'    g_{sid}{{"{glabel}"}}')
-            out.append(f"    g_{sid} -->|утверждено| s_{sid}")
-            node[sid] = f"g_{sid}"
+            out.append(f'    {prefix}g_{sid}{{"{glabel}"}}')
+            out.append(f"    {prefix}g_{sid} -->|утверждено| {sn}")
+            node[sid] = f"{prefix}g_{sid}"
         if sid in hole_steps:
-            out.append(f"    class s_{sid} hole")
-    out.append('    done(["завершён"])')
+            out.append(f"    class {sn} hole")
+    out.append(f'    {done}(["завершён"])')
     order = [s["step_id"] for s in steps]
     if steps:
-        out.append(f"    start --> {node[order[0]]}")
+        out.append(f"    {start} --> {node[order[0]]}")
     for i, s in enumerate(steps):
-        targets = s.get("next") or (order[i + 1 : i + 2] if i + 1 < len(order) else [])
+        sn = f"{prefix}s_{s['step_id']}"
+        if s.get("terminal"):
+            targets = []
+        else:
+            targets = s.get("next") or (order[i + 1 : i + 2] if i + 1 < len(order) else [])
         for t in targets:
             nxt = next((x for x in steps if x["step_id"] == t), None)
             cond = (nxt or {}).get("condition")
-            edge = f" -->|{_q(_short(cond, 40))}| " if cond and s.get("next") else " --> "
-            out.append(f"    s_{s['step_id']}{edge}{node.get(t, 's_' + t)}")
+            edge = f" -->|{_q(_short(cond, 50))}| " if cond else " --> "
+            out.append(f"    {sn}{edge}{node.get(t, prefix + 's_' + t)}")
         if not targets:
-            out.append(f"    s_{s['step_id']} --> done")
+            out.append(f"    {sn} --> {done}")
         if s.get("on_failure") in ("escalate", "retry", "skip"):
-            out.append(f"    s_{s['step_id']} -.->|отказ: {s['on_failure']}| s_{s['step_id']}")
-    out.append("    classDef hole stroke:#c0392b,stroke-width:2px,stroke-dasharray:5 3")
-    out.append("```")
+            out.append(f"    {sn} -.->|отказ: {s['on_failure']}| {sn}")
     return out
+
+
+HOLE_STYLE = "    classDef hole stroke:#c0392b,stroke-width:2px,stroke-dasharray:5 3"
+
+
+def process_diagram(model: Model, process_id: str, holes: list[dict[str, Any]]) -> list[str]:
+    return ["```mermaid", "flowchart TD", *_process_body(model, process_id, holes), HOLE_STYLE, "```"]
+
+
+def group_diagram(model: Model, process_ids: list[str], holes: list[dict[str, Any]]) -> list[str]:
+    """Несколько процессов на одной схеме: каждый в своей рамке subgraph (входы одной темы)."""
+    out = ["```mermaid", "flowchart TD"]
+    for n, pid in enumerate(process_ids, 1):
+        out.append(f'    subgraph p{n}["{_q(model.procs[pid]["name"])}"]')
+        out += ["  " + line for line in _process_body(model, pid, holes, prefix=f"p{n}_")]
+        out.append("    end")
+    return out + [HOLE_STYLE, "```"]
 
 
 def entity_diagram(model: Model, name: str) -> list[str]:

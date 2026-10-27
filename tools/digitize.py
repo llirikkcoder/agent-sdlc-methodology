@@ -9,8 +9,9 @@
       --check ничего не пишет и падает, если файлы в DIR расходятся с описанием
   decompile DIR [--out SRC.py]
       готовая модель → описание на классах (без потерь: build вернёт те же файлы)
-  map SRC [--process ID] [--out FILE.md]
-      сводка по пяти слоям, схемы процессов и автоматы сущностей (Markdown + Mermaid)
+  map SRC [--process ID[,ID...]] [--out FILE.md]
+      сводка по пяти слоям, схемы процессов и автоматы сущностей (Markdown + Mermaid);
+      несколько ID через запятую — процессы одной темы на одной схеме
   twin SRC [--process ID] [--aggregate ID] [--scenario FILE.json] [--as-is] [--assume-confirmed] [--json]
       прогнать процессы на заглушках: Static Guard, гейты, пороги, переходы, события;
       без --process — все активные процессы, каждый в своём журнале; --chain p1,p2@id — процессы
@@ -43,7 +44,7 @@ from softoscope.decompile import decompile  # noqa: E402
 from softoscope.event_store import EventStore  # noqa: E402
 from softoscope.model import InvalidModel, load_model  # noqa: E402
 from softoscope.oop import LAYERS, DescriptionError, compile_namespace  # noqa: E402
-from softoscope.process_map import render  # noqa: E402
+from softoscope.process_map import group_diagram, render  # noqa: E402
 from softoscope.twin import Scenario, Twin, format_trail  # noqa: E402
 
 import drift  # noqa: E402
@@ -139,10 +140,15 @@ def _model_and_holes(m: Materialized) -> tuple[Any, list[dict[str, Any]]]:
 def cmd_map(args: argparse.Namespace) -> int:
     with Materialized(args.src) as m:
         model, holes = _model_and_holes(m)
-        if args.process and args.process not in model.procs:
-            print(f"процесса {args.process!r} нет в слое 3")
+        ids = args.process.split(",") if args.process else []
+        missing = [x for x in ids if x not in model.procs]
+        if missing:
+            print(f"процессов {missing} нет в слое 3")
             return 2
-        text = render(model, holes, args.process)
+        if len(ids) > 1:
+            text = "\n".join([f"# {model.system_id}: процессы {', '.join(ids)}", ""] + group_diagram(model, ids, holes)) + "\n"
+        else:
+            text = render(model, holes, args.process)
     if args.out:
         args.out.write_text(text, encoding="utf-8")
         print(f"карта записана в {args.out}")
