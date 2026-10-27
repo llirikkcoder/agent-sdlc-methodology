@@ -75,6 +75,9 @@ def _process_body(model: Model, process_id: str, holes: list[dict[str, Any]], pr
             label += f" · {_q(s['role'])}"
         if cap:
             label += f"<br/>{_q(cap['capability_id'])} · {EFFECT_SHORT.get(cap['effect'], cap['effect'])}"
+            pre = [c["id"] for c in model.constraints_for_capability(cap["capability_id"], "pre_check")]
+            if pre:
+                label += f"<br/>до шага: {', '.join(pre)}"
         tr = s.get("transition")
         if tr:
             label += f"<br/>{_q(tr['entity'])}: {_q(tr.get('from', '*'))} → {_q(tr['to'])}"
@@ -128,6 +131,7 @@ def group_diagram(model: Model, process_ids: list[str], holes: list[dict[str, An
     out = ["```mermaid", "flowchart TD"]
     for n, pid in enumerate(process_ids, 1):
         out.append(f'    subgraph p{n}["{_q(model.procs[pid]["name"])}"]')
+        out.append("      direction TB")
         out += ["  " + line for line in _process_body(model, pid, holes, prefix=f"p{n}_")]
         out.append("    end")
     return out + [HOLE_STYLE, "```"]
